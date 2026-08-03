@@ -1,0 +1,41 @@
+using GymManager.Application.Abstractions;
+using GymManager.Application.Workouts.Contracts;
+using GymManager.Domain.Abstractions;
+using GymManager.Domain.Workouts;
+using GymManager.Domain.Workouts.Errors;
+using GymManager.SharedKernel.Cqrs;
+using GymManager.SharedKernel.Results;
+using Microsoft.EntityFrameworkCore;
+
+namespace GymManager.Application.Workouts.AddWorkoutExercise;
+
+public sealed class AddWorkoutExerciseCommandHandler(
+    IWorkoutPlanRepository workoutPlanRepository, IUnitOfWork unitOfWork, IApplicationReadDb readDb, IBranchAccessGuard branchAccessGuard)
+    : ICommandHandler<AddWorkoutExerciseCommand, Result<WorkoutPlanExerciseResponse>>
+{
+    public async Task<Result<WorkoutPlanExerciseResponse>> Handle(AddWorkoutExerciseCommand command, CancellationToken cancellationToken)
+    {
+        var plan = await workoutPlanRepository.GetByIdAsync(command.PlanId, cancellationToken);
+        if (plan is null)
+            return Result.Failure<WorkoutPlanExerciseResponse>(WorkoutErrors.PlanNotFound);
+
+        var member = await readDb.Members.FirstOrDefaultAsync(m => m.Id == plan.MemberId, cancellationToken);
+        if (member is not null)
+        {
+            var accessResult = branchAccessGuard.EnsureCanAccess(member.BranchId);
+            if (accessResult.IsFailure)
+                return Result.Failure<WorkoutPlanExerciseResponse>(accessResult.Error);
+        }
+
+        var exercise = plan.AddExercise(
+            command.Exercise.ExerciseName, command.Exercise.DayNumber, command.Exercise.Order, command.Exercise.Sets,
+            command.Exercise.Reps, command.Exercise.WeightKg, command.Exercise.DurationSeconds, command.Exercise.RestSeconds,
+            command.Exercise.Notes);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Result.Success(new WorkoutPlanExerciseResponse(
+            exercise.Id, exercise.ExerciseName, exercise.DayNumber, exercise.Order, exercise.Sets, exercise.Reps,
+            exercise.WeightKg, exercise.DurationSeconds, exercise.RestSeconds, exercise.Notes));
+    }
+}

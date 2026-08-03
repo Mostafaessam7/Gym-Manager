@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign in · Gym Manager</title>
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <style>
+    .login-shell {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top left, var(--color-primary-light), var(--color-bg) 60%);
+      padding: var(--spacing-4);
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 380px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: var(--spacing-6);
+    }
+
+    .login-brand {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-3);
+      margin-bottom: var(--spacing-5);
+    }
+
+    .login-brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--color-primary), #7c3aed);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+
+    .login-brand-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .login-field {
+      margin-bottom: var(--spacing-4);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .login-field label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+
+    .login-field input {
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+
+    .login-submit {
+      width: 100%;
+      padding: 11px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: var(--color-primary);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: var(--spacing-2);
+    }
+
+    .login-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .login-error {
+      background: var(--color-danger-light);
+      color: var(--color-danger);
+      border-radius: var(--radius-sm);
+      padding: var(--spacing-3);
+      font-size: 0.85rem;
+      margin-bottom: var(--spacing-4);
+    }
+
+    .login-hint {
+      margin-top: var(--spacing-4);
+      font-size: 0.78rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-shell">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-brand-mark">GM</div>
+        <div class="login-brand-name">Gym Manager</div>
+      </div>
+
+      <div id="login-error" class="login-error hidden"></div>
+
+      <form id="login-form">
+        <div class="login-field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="username" required />
+        </div>
+        <div class="login-field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="login-submit" id="login-submit">Sign in</button>
+      </form>
+
+      <p class="login-hint text-muted">Default seeded account: admin@gymmanager.local</p>
+    </div>
+  </div>
+
+  <script type="module" src="js/pages/loginPage.js"></script>
+</body>
+</html>

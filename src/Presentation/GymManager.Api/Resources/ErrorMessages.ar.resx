@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Branch.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الفرع.</value>
+  </data>
+  <data name="Branch.NameAlreadyInUse" xml:space="preserve">
+    <value>يوجد بالفعل فرع بهذا الاسم.</value>
+  </data>
+  <data name="Branch.AccessDenied" xml:space="preserve">
+    <value>ليس لديك صلاحية الوصول إلى بيانات هذا الفرع.</value>
+  </data>
+  <data name="GymClass.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الحصة.</value>
+  </data>
+  <data name="ClassSession.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على جلسة الحصة.</value>
+  </data>
+  <data name="ClassSession.SessionFull" xml:space="preserve">
+    <value>وصلت هذه الجلسة إلى الحد الأقصى للسعة.</value>
+  </data>
+  <data name="ClassSession.AlreadyBooked" xml:space="preserve">
+    <value>هذا العضو لديه بالفعل حجز نشط لهذه الجلسة.</value>
+  </data>
+  <data name="Role.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الدور.</value>
+  </data>
+  <data name="User.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على المستخدم.</value>
+  </data>
+  <data name="User.InvalidCredentials" xml:space="preserve">
+    <value>البريد الإلكتروني أو كلمة المرور غير صحيحة.</value>
+  </data>
+  <data name="User.EmailAlreadyInUse" xml:space="preserve">
+    <value>يوجد بالفعل حساب مسجل بهذا البريد الإلكتروني.</value>
+  </data>
+  <data name="User.AccountDeactivated" xml:space="preserve">
+    <value>تم إلغاء تفعيل هذا الحساب.</value>
+  </data>
+  <data name="Invoice.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الفاتورة.</value>
+  </data>
+  <data name="Invoice.NotDraft" xml:space="preserve">
+    <value>هذه الفاتورة لم تعد في حالة مسودة.</value>
+  </data>
+  <data name="Invoice.AlreadyPaid" xml:space="preserve">
+    <value>تم دفع هذه الفاتورة بالفعل.</value>
+  </data>
+  <data name="Locker.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الخزانة.</value>
+  </data>
+  <data name="Locker.NotAvailable" xml:space="preserve">
+    <value>هذه الخزانة غير متاحة حاليًا للتخصيص.</value>
+  </data>
+  <data name="Member.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على العضو.</value>
+  </data>
+  <data name="Member.EmailAlreadyInUse" xml:space="preserve">
+    <value>هذا البريد الإلكتروني مسجل بالفعل لعضو آخر.</value>
+  </data>
+  <data name="Member.AlreadyFrozen" xml:space="preserve">
+    <value>عضوية هذا العضو مجمّدة بالفعل.</value>
+  </data>
+  <data name="Member.NotFrozen" xml:space="preserve">
+    <value>عضوية هذا العضو غير مجمّدة حاليًا.</value>
+  </data>
+  <data name="Member.CheckInCodeNotFound" xml:space="preserve">
+    <value>لا يوجد عضو مطابق لرمز تسجيل الدخول هذا.</value>
+  </data>
+  <data name="Membership.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على العضوية.</value>
+  </data>
+  <data name="Membership.NotActive" xml:space="preserve">
+    <value>هذه العضوية غير نشطة حاليًا.</value>
+  </data>
+  <data name="Membership.CannotRenewCancelled" xml:space="preserve">
+    <value>لا يمكن تجديد عضوية ملغاة.</value>
+  </data>
+  <data name="MembershipPlan.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على خطة العضوية.</value>
+  </data>
+  <data name="MembershipPlan.Inactive" xml:space="preserve">
+    <value>خطة العضوية هذه لم تعد متاحة للشراء.</value>
+  </data>
+  <data name="Payment.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الدفعة.</value>
+  </data>
+  <data name="Product.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على المنتج.</value>
+  </data>
+  <data name="Product.InsufficientStock" xml:space="preserve">
+    <value>لا يوجد مخزون كافٍ لإتمام هذه العملية.</value>
+  </data>
+  <data name="Trainer.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على المدرب.</value>
+  </data>
+  <data name="Attendance.AlreadyCheckedIn" xml:space="preserve">
+    <value>سجّل هذا العضو حضوره بالفعل.</value>
+  </data>
+  <data name="Attendance.NoOpenSession" xml:space="preserve">
+    <value>لا توجد جلسة حضور مفتوحة لهذا العضو.</value>
+  </data>
+</root>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Branch.NotFound" xml:space="preserve">
+    <value>No se encontró la sucursal.</value>
+  </data>
+  <data name="Branch.NameAlreadyInUse" xml:space="preserve">
+    <value>Ya existe una sucursal con ese nombre.</value>
+  </data>
+  <data name="Branch.AccessDenied" xml:space="preserve">
+    <value>No tiene acceso a los datos de esta sucursal.</value>
+  </data>
+  <data name="GymClass.NotFound" xml:space="preserve">
+    <value>No se encontró la clase.</value>
+  </data>
+  <data name="ClassSession.NotFound" xml:space="preserve">
+    <value>No se encontró la sesión de la clase.</value>
+  </data>
+  <data name="ClassSession.SessionFull" xml:space="preserve">
+    <value>Esta sesión ha alcanzado su capacidad máxima.</value>
+  </data>
+  <data name="ClassSession.AlreadyBooked" xml:space="preserve">
+    <value>Este socio ya tiene una reserva activa para esta sesión.</value>
+  </data>
+  <data name="Role.NotFound" xml:space="preserve">
+    <value>No se encontró el rol.</value>
+  </data>
+  <data name="User.NotFound" xml:space="preserve">
+    <value>No se encontró el usuario.</value>
+  </data>
+  <data name="User.InvalidCredentials" xml:space="preserve">
+    <value>Correo electrónico o contraseña no válidos.</value>
+  </data>
+  <data name="User.EmailAlreadyInUse" xml:space="preserve">
+    <value>Ya existe una cuenta con ese correo electrónico.</value>
+  </data>
+  <data name="User.AccountDeactivated" xml:space="preserve">
+    <value>Esta cuenta ha sido desactivada.</value>
+  </data>
+  <data name="Invoice.NotFound" xml:space="preserve">
+    <value>No se encontró la factura.</value>
+  </data>
+  <data name="Invoice.NotDraft" xml:space="preserve">
+    <value>Esta factura ya no es un borrador.</value>
+  </data>
+  <data name="Invoice.AlreadyPaid" xml:space="preserve">
+    <value>Esta factura ya ha sido pagada.</value>
+  </data>
+  <data name="Locker.NotFound" xml:space="preserve">
+    <value>No se encontró el casillero.</value>
+  </data>
+  <data name="Locker.NotAvailable" xml:space="preserve">
+    <value>Este casillero no está disponible actualmente para asignación.</value>
+  </data>
+  <data name="Member.NotFound" xml:space="preserve">
+    <value>No se encontró el socio.</value>
+  </data>
+  <data name="Member.EmailAlreadyInUse" xml:space="preserve">
+    <value>Ese correo electrónico ya está registrado a otro socio.</value>
+  </data>
+  <data name="Member.AlreadyFrozen" xml:space="preserve">
+    <value>El socio ya está congelado.</value>
+  </data>
+  <data name="Member.NotFrozen" xml:space="preserve">
+    <value>El socio no está actualmente congelado.</value>
+  </data>
+  <data name="Member.CheckInCodeNotFound" xml:space="preserve">
+    <value>Ningún socio coincide con este código de acceso.</value>
+  </data>
+  <data name="Membership.NotFound" xml:space="preserve">
+    <value>No se encontró la membresía.</value>
+  </data>
+  <data name="Membership.NotActive" xml:space="preserve">
+    <value>Esta membresía no está actualmente activa.</value>
+  </data>
+  <data name="Membership.CannotRenewCancelled" xml:space="preserve">
+    <value>No se puede renovar una membresía cancelada.</value>
+  </data>
+  <data name="MembershipPlan.NotFound" xml:space="preserve">
+    <value>No se encontró el plan de membresía.</value>
+  </data>
+  <data name="MembershipPlan.Inactive" xml:space="preserve">
+    <value>Este plan de membresía ya no está disponible para su compra.</value>
+  </data>
+  <data name="Payment.NotFound" xml:space="preserve">
+    <value>No se encontró el pago.</value>
+  </data>
+  <data name="Product.NotFound" xml:space="preserve">
+    <value>No se encontró el producto.</value>
+  </data>
+  <data name="Product.InsufficientStock" xml:space="preserve">
+    <value>No hay suficiente inventario para completar esta operación.</value>
+  </data>
+  <data name="Trainer.NotFound" xml:space="preserve">
+    <value>No se encontró el entrenador.</value>
+  </data>
+  <data name="Attendance.AlreadyCheckedIn" xml:space="preserve">
+    <value>Este socio ya ha registrado su entrada.</value>
+  </data>
+  <data name="Attendance.NoOpenSession" xml:space="preserve">
+    <value>Este socio no tiene una sesión de entrada abierta.</value>
+  </data>
+</root>

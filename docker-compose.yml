@@ -1,0 +1,51 @@
+# LOCAL DEVELOPMENT ONLY. This file runs the API in the Development environment (see `api.environment`
+# below), which deliberately disables SecretsValidator's startup guard and ships a well-known SA password.
+# Do NOT use this file, as-is, to deploy anywhere reachable outside your machine — for a real deployment,
+# override ASPNETCORE_ENVIRONMENT and every secret via real environment variables or a secrets manager (see
+# README "Configuration & secrets"), and do not publish the database port to the host.
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: gymmanager-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Your_password123!"
+    # Not published to the host — only the `api` service needs to reach it, over the compose network by
+    # service name. Uncomment only for local debugging with an external SQL client, and never in a shared
+    # or internet-reachable environment.
+    # ports:
+    #   - "1433:1433"
+    volumes:
+      - gymmanager-sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"Your_password123!\" -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: src/Presentation/GymManager.Api/Dockerfile
+    container_name: gymmanager-api
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ConnectionStrings__GymManagerDatabase: "Server=sqlserver,1433;Database=GymManagerDb;User Id=sa;Password=Your_password123!;TrustServerCertificate=True;MultipleActiveResultSets=True"
+    ports:
+      - "8080:8080"
+
+  frontend:
+    image: nginx:alpine
+    container_name: gymmanager-frontend
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    ports:
+      - "5500:80"
+
+volumes:
+  gymmanager-sql-data:
