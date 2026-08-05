@@ -6,6 +6,13 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["--yes", "serve", "frontend", "-l", "5500"],
       "port": 5500
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/Presentation/GymManager.Api", "--urls", "http://localhost:8080"],
+      "port": 8080,
+      "url": "http://localhost:8080"
     }
   ]
 }

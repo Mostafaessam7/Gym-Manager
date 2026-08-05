@@ -20,7 +20,7 @@ function branchFields(branch = {}) {
 }
 
 function openBranchModal(existing, onSaved) {
-  const fields = branchFields(existing);
+  const fields = branchFields(existing || {});
   const body = renderForm(fields);
 
   openModal({

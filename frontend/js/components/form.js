@@ -57,9 +57,19 @@ export function readForm(formElement, fields) {
     const el = formElement.querySelector(`#field-${field.name}`);
     if (!el) return;
 
-    if (field.type === 'checkbox') values[field.name] = el.checked;
-    else if (field.type === 'number') values[field.name] = el.value === '' ? null : Number(el.value);
-    else values[field.name] = el.value === '' ? null : el.value;
+    if (field.type === 'checkbox') {
+      values[field.name] = el.checked;
+    } else if (field.type === 'number') {
+      values[field.name] = el.value === '' ? null : Number(el.value);
+    } else if (field.type === 'select' && (field.options || []).length && field.options.every((o) => typeof o.value === 'number')) {
+      // A <select> always yields a string from the DOM regardless of the option's original type. Most
+      // selects here are bound to a numeric enum (e.g. Gender, PaymentMethod) that the API rejects unless
+      // sent as a JSON number — only GUID-valued selects (branch/member/user pickers) should stay strings,
+      // so this converts based on whether every option for this field was declared with a numeric value.
+      values[field.name] = Number(el.value);
+    } else {
+      values[field.name] = el.value === '' ? null : el.value;
+    }
   });
   return values;
 }

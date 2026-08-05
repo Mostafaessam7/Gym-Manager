@@ -10,7 +10,16 @@
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast), opacity var(--transition-fast);
+  transition: background var(--transition-fast), border-color var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }
 
 .btn:disabled {
@@ -19,12 +28,14 @@
 }
 
 .btn-primary {
-  background: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
   color: #fff;
+  box-shadow: 0 2px 8px rgba(var(--color-primary-rgb), 0.28);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--color-primary-hover);
+  background: linear-gradient(135deg, var(--color-primary-hover), var(--color-accent));
+  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.36);
 }
 
 .btn-secondary {
@@ -35,6 +46,7 @@
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--color-surface-alt);
+  border-color: var(--color-text-muted);
 }
 
 .btn-danger {
@@ -51,6 +63,17 @@
   font-size: 0.78rem;
 }
 
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border-color: transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
 /* Cards */
 .card {
   background: var(--color-surface);
@@ -58,6 +81,7 @@
   border-radius: var(--radius-lg);
   padding: var(--spacing-5);
   box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-med);
 }
 
 .card-header {
@@ -73,6 +97,11 @@
   margin: 0;
 }
 
+.card-header p {
+  margin: 2px 0 0 0;
+  font-size: 0.82rem;
+}
+
 /* Stat cards */
 .stats-grid {
   display: grid;
@@ -82,11 +111,28 @@
 }
 
 .stat-card {
+  position: relative;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-4) var(--spacing-5);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: transform var(--transition-med), box-shadow var(--transition-med);
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  opacity: 0.85;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .stat-card__label {
@@ -100,6 +146,7 @@
 .stat-card__value {
   font-size: 1.65rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .stat-card__delta {
@@ -109,6 +156,20 @@
 
 .delta-up { color: var(--color-success); }
 .delta-down { color: var(--color-danger); }
+
+/* Section title used above a card/table when a page needs a heading + subtitle without a full card wrap */
+.section-title {
+  margin-bottom: var(--spacing-4);
+}
+
+.section-title h2, .section-title h3 {
+  margin-bottom: 2px;
+}
+
+.section-title p {
+  margin: 0;
+  font-size: 0.85rem;
+}
 
 /* Tables */
 .data-table-wrap {
@@ -415,4 +476,232 @@ input:focus, select:focus, textarea:focus {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* Detail list — label/value pairs inside a modal or card (member detail, gift card detail, etc.) */
+.detail-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
+}
+
+.detail-list dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.detail-list dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Timeline — follow-ups, activity history */
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 2px solid var(--color-border);
+}
+
+.timeline-item {
+  position: relative;
+  padding: 0 0 var(--spacing-4) var(--spacing-4);
+}
+
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 2px solid var(--color-surface);
+}
+
+.timeline-item.is-done::before {
+  background: var(--color-success);
+}
+
+.timeline-item__title {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.timeline-item__meta {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.timeline-item__notes {
+  font-size: 0.84rem;
+  margin-top: 4px;
+}
+
+/* Chips — small inline tag list (used for gift-card transaction log, exercise tags, etc.) */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  font-size: 0.76rem;
+}
+
+/* Kanban board — CRM pipeline */
+.kanban {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(230px, 1fr);
+  gap: var(--spacing-4);
+  overflow-x: auto;
+  padding-bottom: var(--spacing-2);
+}
+
+.kanban-col {
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-3);
+  min-height: 120px;
+}
+
+.kanban-col__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-3);
+}
+
+.kanban-col__count {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.72rem;
+}
+
+.kanban-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-3);
+  margin-bottom: var(--spacing-2);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.kanban-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.kanban-card__title {
+  font-weight: 600;
+  font-size: 0.86rem;
+  margin-bottom: 4px;
+}
+
+.kanban-card__meta {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+
+/* Sub-list — nested rows inside a modal (meals, exercises, gift card transactions) */
+.sub-list {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-top: var(--spacing-2);
+}
+
+.sub-list__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.85rem;
+}
+
+.sub-list__row:last-child {
+  border-bottom: none;
+}
+
+.sub-list__row-main {
+  font-weight: 600;
+}
+
+.sub-list__row-meta {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.inline-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Member picker — a search box + result list used by member-scoped modules (fitness) */
+.picker {
+  position: relative;
+  max-width: 360px;
+}
+
+.picker-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.picker-result {
+  padding: var(--spacing-2) var(--spacing-3);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.picker-result:hover {
+  background: var(--color-surface-alt);
+}
+
+.selected-member-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-3) var(--spacing-4);
+  margin-bottom: var(--spacing-4);
 }

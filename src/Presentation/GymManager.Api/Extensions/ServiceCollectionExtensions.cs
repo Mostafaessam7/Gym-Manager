@@ -72,6 +72,14 @@ public static class ServiceCollectionExtensions
     {
         services.AddSwaggerGen(options =>
         {
+            // Several controllers declare a nested request DTO with the same short name (e.g.
+            // `UpdatePlanRequest` on both MembershipPlansController and NutritionController) — Swashbuckle's
+            // default schemaId is just the type name, so two such DTOs collide and blow up schema generation
+            // with a 500 on /swagger/v1/swagger.json. Disambiguate using the declaring controller name too.
+            options.CustomSchemaIds(type => type.DeclaringType is not null
+                ? $"{type.DeclaringType.Name}.{type.Name}"
+                : type.Name);
+
             options.SwaggerDoc("v1", new OpenApiInfo
             {
                 Title = "Gym Manager API",

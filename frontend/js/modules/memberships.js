@@ -9,7 +9,7 @@ import { rawHtml } from '../utils/html.js';
 function planFields(plan = {}) {
   return [
     { name: 'name', label: 'Plan Name', value: plan.name, required: true },
-    { name: 'description', label: 'Description', type: 'textarea', value: plan.description, span2: true },
+    { name: 'description', label: 'Description', type: 'textarea', value: plan.description, span2: true, required: true },
     { name: 'price', label: 'Price', type: 'number', step: '0.01', value: plan.price, required: true },
     { name: 'currency', label: 'Currency', value: plan.currency || 'USD', required: true },
     { name: 'durationInDays', label: 'Duration (days)', type: 'number', value: plan.durationInDays, required: true },
@@ -18,7 +18,7 @@ function planFields(plan = {}) {
 }
 
 function openPlanModal(existing, onSaved) {
-  const fields = planFields(existing);
+  const fields = planFields(existing || {});
   const body = renderForm(fields);
 
   openModal({

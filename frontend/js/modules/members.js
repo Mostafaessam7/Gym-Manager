@@ -25,7 +25,7 @@ function memberFields(member = {}) {
 
 async function openMemberModal(existing, onSaved) {
   const branches = await api.get('/branches');
-  const fields = memberFields(existing);
+  const fields = memberFields(existing || {});
   if (!existing) {
     fields.unshift({
       name: 'branchId', label: 'Branch', type: 'select', required: true,

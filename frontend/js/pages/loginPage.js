@@ -31,8 +31,15 @@ form.addEventListener('submit', async (event) => {
       throw new Error(problem?.detail || 'Invalid email or password.');
     }
 
+    // POST /auth/login returns { requiresTwoFactor, twoFactorChallengeToken, authentication } rather than a
+    // flat AuthenticationResponse (unlike /auth/refresh) — the account's tokens/roles/permissions live under
+    // `authentication` and are only present when a second factor isn't required.
     const data = await response.json();
-    authStore.setSession(toSession(data));
+    if (data.requiresTwoFactor) {
+      throw new Error('This account has two-factor authentication enabled. The admin UI does not yet support completing a 2FA challenge — use POST /auth/login/2fa (see Swagger) to finish signing in.');
+    }
+
+    authStore.setSession(toSession(data.authentication));
     window.location.href = 'dashboard.html';
   } catch (error) {
     errorBox.textContent = error.message || 'Unable to sign in. Please try again.';
