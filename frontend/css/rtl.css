@@ -1,0 +1,77 @@
+/* RTL overrides — activated by [dir="rtl"] on <html>, set by js/i18n/index.js when Arabic is active.
+   Most of this app "just works" under RTL for free: flex rows and CSS grid auto-flow both reverse their
+   visual order based on `dir` per spec, so toolbars, modal footers, card headers, and kanban columns need
+   no override here. Only rules using *physical* left/right/margin-left/etc. (rather than the flow-relative
+   default) need a mirrored counterpart below. */
+
+/* No override needed for .app-shell's grid-template-columns/areas: CSS Grid already mirrors explicit
+   column tracks under dir="rtl" (column 1 sits at the inline-start edge, which is the physical right side
+   in RTL) — the same way flex rows do. An explicit swap here would double-flip it back to the LTR position. */
+
+[dir="rtl"] .sidebar {
+  border-right: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+[dir="rtl"] .nav-link {
+  border-left: none;
+  border-right: 2px solid transparent;
+}
+
+[dir="rtl"] .nav-link.active {
+  border-right-color: var(--color-accent);
+}
+
+[dir="rtl"] .search-input-wrap input {
+  padding-left: 12px;
+  padding-right: 34px;
+}
+
+[dir="rtl"] .search-input-wrap::before {
+  left: auto;
+  right: 10px;
+}
+
+[dir="rtl"] .data-table thead th {
+  text-align: right;
+}
+
+[dir="rtl"] .timeline {
+  border-left: none;
+  border-right: 2px solid var(--color-border);
+}
+
+[dir="rtl"] .timeline-item {
+  padding-left: 0;
+  padding-right: var(--spacing-4);
+}
+
+[dir="rtl"] .timeline-item::before {
+  left: auto;
+  right: -6px;
+}
+
+[dir="rtl"] .toast-stack {
+  right: auto;
+  left: var(--spacing-5);
+}
+
+[dir="rtl"] .toast {
+  border-left: none;
+  border-right: 4px solid var(--color-primary);
+}
+
+[dir="rtl"] .toast.toast-success { border-right-color: var(--color-success); }
+[dir="rtl"] .toast.toast-danger { border-right-color: var(--color-danger); }
+[dir="rtl"] .toast.toast-warning { border-right-color: var(--color-warning); }
+
+@media (max-width: 900px) {
+  [dir="rtl"] .sidebar {
+    inset: 0 0 0 auto;
+    transform: translateX(100%);
+  }
+
+  [dir="rtl"] .sidebar.open {
+    transform: translateX(0);
+  }
+}

@@ -5,44 +5,45 @@ import { renderForm, readForm } from '../components/form.js';
 import { toastSuccess, toastError } from '../components/toast.js';
 import { authStore } from '../auth/authStore.js';
 import { rawHtml } from '../utils/html.js';
+import { t, tStatus } from '../i18n/index.js';
 
 async function openTrainerModal(existing, onSaved) {
   const fields = [
-    { name: 'firstName', label: 'First Name', value: existing?.firstName, required: true },
-    { name: 'lastName', label: 'Last Name', value: existing?.lastName, required: true },
-    { name: 'specialization', label: 'Specialization', value: existing?.specialization, required: true },
-    { name: 'phoneNumber', label: 'Phone Number', value: existing?.phoneNumber },
-    { name: 'email', label: 'Email', type: 'email', value: existing?.email },
-    { name: 'bio', label: 'Bio', type: 'textarea', value: existing?.bio, span2: true },
+    { name: 'firstName', label: t('common.firstName'), value: existing?.firstName, required: true },
+    { name: 'lastName', label: t('common.lastName'), value: existing?.lastName, required: true },
+    { name: 'specialization', label: t('trainers.specialization'), value: existing?.specialization, required: true },
+    { name: 'phoneNumber', label: t('trainers.phone'), value: existing?.phoneNumber },
+    { name: 'email', label: t('trainers.email'), type: 'email', value: existing?.email },
+    { name: 'bio', label: t('trainers.bio'), type: 'textarea', value: existing?.bio, span2: true },
   ];
 
   if (!existing) {
     const branches = await api.get('/branches');
-    fields.unshift({ name: 'branchId', label: 'Branch', type: 'select', required: true, options: branches.map((b) => ({ value: b.id, label: b.name })) });
+    fields.unshift({ name: 'branchId', label: t('trainers.branch'), type: 'select', required: true, options: branches.map((b) => ({ value: b.id, label: b.name })) });
   }
 
   const body = renderForm(fields);
 
   openModal({
-    title: existing ? 'Edit Trainer' : 'New Trainer',
+    title: existing ? t('trainers.editTrainer') : t('trainers.newTrainerTitle'),
     wide: true,
     bodyHtml: '',
     onMount: (ctrl) => ctrl.bodyElement.appendChild(body),
     footerButtons: [
-      { label: 'Cancel', className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
+      { label: t('common.cancel'), className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
       {
-        label: 'Save',
+        label: t('common.save'),
         className: 'btn-primary',
         onClick: async (ctrl) => {
           const values = readForm(body, fields);
           try {
             if (existing) await api.put(`/trainers/${existing.id}`, values);
             else await api.post('/trainers', values);
-            toastSuccess(`Trainer ${existing ? 'updated' : 'created'}.`);
+            toastSuccess(existing ? t('trainers.trainerUpdated') : t('trainers.trainerCreated'));
             ctrl.close();
             onSaved();
           } catch (error) {
-            toastError(error.message || 'Failed to save trainer.');
+            toastError(error.message || t('trainers.saveFailed'));
           }
         },
       },
@@ -54,8 +55,8 @@ export function render(container) {
   container.innerHTML = `
     <div class="card">
       <div class="card-header">
-        <h2>Trainers</h2>
-        ${authStore.hasPermission('trainers:manage') ? '<button class="btn btn-primary" id="new-trainer-btn">+ New Trainer</button>' : ''}
+        <h2>${t('trainers.title')}</h2>
+        ${authStore.hasPermission('trainers:manage') ? `<button class="btn btn-primary" id="new-trainer-btn">${t('trainers.newTrainer')}</button>` : ''}
       </div>
       <div id="trainers-table"></div>
     </div>
@@ -64,17 +65,17 @@ export function render(container) {
   const table = createDataTable(document.getElementById('trainers-table'), {
     searchable: false,
     columns: [
-      { label: 'Name', render: (t) => `${t.firstName} ${t.lastName}` },
-      { label: 'Specialization', key: 'specialization' },
-      { label: 'Phone', key: 'phoneNumber' },
-      { label: 'Status', render: (t) => rawHtml(`<span class="badge badge-${t.isActive ? 'success' : 'neutral'}">${t.isActive ? 'Active' : 'Inactive'}</span>`) },
+      { label: t('trainers.nameCol'), render: (tr) => `${tr.firstName} ${tr.lastName}` },
+      { label: t('trainers.specializationCol'), key: 'specialization' },
+      { label: t('trainers.phoneCol'), key: 'phoneNumber' },
+      { label: t('trainers.statusCol'), render: (tr) => rawHtml(`<span class="badge badge-${tr.isActive ? 'success' : 'neutral'}">${tr.isActive ? tStatus('Active') : tStatus('Inactive')}</span>`) },
     ],
     fetchPage: () => api.get('/trainers', { includeInactive: true }),
     rowActions: authStore.hasPermission('trainers:manage') ? (trainer) => [
-      { label: 'Edit', onClick: (row, reload) => openTrainerModal(row, reload) },
+      { label: t('common.edit'), onClick: (row, reload) => openTrainerModal(row, reload) },
       ...(trainer.isActive ? [{
-        label: 'Deactivate', className: 'btn-danger',
-        onClick: async (row, reload) => { await api.post(`/trainers/${row.id}/deactivate`); toastSuccess('Trainer deactivated.'); reload(); },
+        label: t('common.deactivate'), className: 'btn-danger',
+        onClick: async (row, reload) => { await api.post(`/trainers/${row.id}/deactivate`); toastSuccess(t('trainers.trainerDeactivated')); reload(); },
       }] : []),
     ] : null,
   });

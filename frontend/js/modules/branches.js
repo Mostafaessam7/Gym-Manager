@@ -5,17 +5,18 @@ import { renderForm, readForm } from '../components/form.js';
 import { toastSuccess, toastError } from '../components/toast.js';
 import { authStore } from '../auth/authStore.js';
 import { rawHtml } from '../utils/html.js';
+import { t, tStatus } from '../i18n/index.js';
 
 function branchFields(branch = {}) {
   return [
-    { name: 'name', label: 'Branch Name', value: branch.name, required: true },
-    { name: 'country', label: 'Country', value: branch.country, required: true },
-    { name: 'street', label: 'Street', value: branch.street },
-    { name: 'city', label: 'City', value: branch.city },
-    { name: 'state', label: 'State / Province', value: branch.state },
-    { name: 'postalCode', label: 'Postal Code', value: branch.postalCode },
-    { name: 'phoneNumber', label: 'Phone Number', value: branch.phoneNumber },
-    { name: 'email', label: 'Email', type: 'email', value: branch.email },
+    { name: 'name', label: t('branches.branchName'), value: branch.name, required: true },
+    { name: 'country', label: t('branches.country'), value: branch.country, required: true },
+    { name: 'street', label: t('branches.street'), value: branch.street },
+    { name: 'city', label: t('branches.city'), value: branch.city },
+    { name: 'state', label: t('branches.state'), value: branch.state },
+    { name: 'postalCode', label: t('branches.postalCode'), value: branch.postalCode },
+    { name: 'phoneNumber', label: t('branches.phone'), value: branch.phoneNumber },
+    { name: 'email', label: t('branches.email'), type: 'email', value: branch.email },
   ];
 }
 
@@ -24,25 +25,25 @@ function openBranchModal(existing, onSaved) {
   const body = renderForm(fields);
 
   openModal({
-    title: existing ? 'Edit Branch' : 'New Branch',
+    title: existing ? t('branches.editBranch') : t('branches.newBranchTitle'),
     wide: true,
     bodyHtml: '',
     onMount: (ctrl) => ctrl.bodyElement.appendChild(body),
     footerButtons: [
-      { label: 'Cancel', className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
+      { label: t('common.cancel'), className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
       {
-        label: 'Save',
+        label: t('common.save'),
         className: 'btn-primary',
         onClick: async (ctrl) => {
           const values = readForm(body, fields);
           try {
             if (existing) await api.put(`/branches/${existing.id}`, values);
             else await api.post('/branches', values);
-            toastSuccess(`Branch ${existing ? 'updated' : 'created'}.`);
+            toastSuccess(existing ? t('branches.branchUpdated') : t('branches.branchCreated'));
             ctrl.close();
             onSaved();
           } catch (error) {
-            toastError(error.message || 'Failed to save branch.');
+            toastError(error.message || t('branches.saveFailed'));
           }
         },
       },
@@ -54,8 +55,8 @@ export function render(container) {
   container.innerHTML = `
     <div class="card">
       <div class="card-header">
-        <h2>Branches</h2>
-        ${authStore.hasPermission('branches:manage') ? '<button class="btn btn-primary" id="new-branch-btn">+ New Branch</button>' : ''}
+        <h2>${t('branches.title')}</h2>
+        ${authStore.hasPermission('branches:manage') ? `<button class="btn btn-primary" id="new-branch-btn">${t('branches.newBranch')}</button>` : ''}
       </div>
       <div id="branches-table"></div>
     </div>
@@ -64,18 +65,18 @@ export function render(container) {
   const table = createDataTable(document.getElementById('branches-table'), {
     searchable: false,
     columns: [
-      { label: 'Name', key: 'name' },
-      { label: 'City', key: 'city' },
-      { label: 'Country', key: 'country' },
-      { label: 'Phone', key: 'phoneNumber' },
-      { label: 'Status', render: (b) => rawHtml(`<span class="badge badge-${b.isActive ? 'success' : 'neutral'}">${b.isActive ? 'Active' : 'Inactive'}</span>`) },
+      { label: t('branches.name'), key: 'name' },
+      { label: t('branches.cityCol'), key: 'city' },
+      { label: t('branches.countryCol'), key: 'country' },
+      { label: t('branches.phoneCol'), key: 'phoneNumber' },
+      { label: t('branches.statusCol'), render: (b) => rawHtml(`<span class="badge badge-${b.isActive ? 'success' : 'neutral'}">${b.isActive ? tStatus('Active') : tStatus('Inactive')}</span>`) },
     ],
     fetchPage: () => api.get('/branches', { includeInactive: true }),
     rowActions: authStore.hasPermission('branches:manage') ? (branch) => [
-      { label: 'Edit', onClick: (row, reload) => openBranchModal(row, reload) },
+      { label: t('common.edit'), onClick: (row, reload) => openBranchModal(row, reload) },
       ...(branch.isActive ? [{
-        label: 'Deactivate', className: 'btn-danger',
-        onClick: async (row, reload) => { await api.post(`/branches/${row.id}/deactivate`); toastSuccess('Branch deactivated.'); reload(); },
+        label: t('common.deactivate'), className: 'btn-danger',
+        onClick: async (row, reload) => { await api.post(`/branches/${row.id}/deactivate`); toastSuccess(t('branches.branchDeactivated')); reload(); },
       }] : []),
     ] : null,
   });

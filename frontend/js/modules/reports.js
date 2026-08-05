@@ -2,25 +2,28 @@ import { api } from '../api/apiClient.js';
 import { authStore } from '../auth/authStore.js';
 import { toastError } from '../components/toast.js';
 import { escapeHtml } from '../utils/html.js';
+import { t } from '../i18n/index.js';
 
-const REPORTS = {
-  members: { label: 'Members', path: '/reports/members', needsRange: false },
-  attendance: { label: 'Attendance', path: '/reports/attendance', needsRange: true },
-  revenue: { label: 'Revenue', path: '/reports/revenue', needsRange: true },
-  memberships: { label: 'Memberships', path: '/reports/memberships', needsRange: false },
-  trainers: { label: 'Trainers', path: '/reports/trainers', needsRange: true },
-  classes: { label: 'Classes', path: '/reports/classes', needsRange: true },
-  inventory: { label: 'Inventory', path: '/reports/inventory', needsRange: false },
-  sales: { label: 'Sales', path: '/reports/sales', needsRange: true },
-  expenses: { label: 'Expenses', path: '/reports/expenses', needsRange: true },
-  'profit-and-loss': { label: 'Profit & Loss', path: '/reports/profit-and-loss', needsRange: true },
-  'daily-closing': { label: 'Daily Closing', path: '/reports/daily-closing', needsRange: false, needsDate: true },
-  'cash-flow': { label: 'Cash Flow', path: '/reports/cash-flow', needsRange: true },
-};
+function reportsConfig() {
+  return {
+    members: { label: t('reports.reportMembers'), path: '/reports/members', needsRange: false },
+    attendance: { label: t('reports.reportAttendance'), path: '/reports/attendance', needsRange: true },
+    revenue: { label: t('reports.reportRevenue'), path: '/reports/revenue', needsRange: true },
+    memberships: { label: t('reports.reportMemberships'), path: '/reports/memberships', needsRange: false },
+    trainers: { label: t('reports.reportTrainers'), path: '/reports/trainers', needsRange: true },
+    classes: { label: t('reports.reportClasses'), path: '/reports/classes', needsRange: true },
+    inventory: { label: t('reports.reportInventory'), path: '/reports/inventory', needsRange: false },
+    sales: { label: t('reports.reportSales'), path: '/reports/sales', needsRange: true },
+    expenses: { label: t('reports.reportExpenses'), path: '/reports/expenses', needsRange: true },
+    'profit-and-loss': { label: t('reports.reportProfitLoss'), path: '/reports/profit-and-loss', needsRange: true },
+    'daily-closing': { label: t('reports.reportDailyClosing'), path: '/reports/daily-closing', needsRange: false, needsDate: true },
+    'cash-flow': { label: t('reports.reportCashFlow'), path: '/reports/cash-flow', needsRange: true },
+  };
+}
 
 function renderGenericTable(rows) {
   const list = Array.isArray(rows) ? rows : [rows];
-  if (!list.length) return '<div class="empty-state">No data for the selected range.</div>';
+  if (!list.length) return `<div class="empty-state">${t('reports.noData')}</div>`;
 
   const columns = Object.keys(list[0]);
   return `
@@ -36,23 +39,25 @@ function renderGenericTable(rows) {
 }
 
 export function render(container) {
+  const REPORTS = reportsConfig();
+
   container.innerHTML = `
     <div class="card">
-      <h2>Reports</h2>
+      <h2>${t('reports.title')}</h2>
       <div class="form-grid" style="margin-bottom: var(--spacing-4);">
         <div class="form-field">
-          <label for="report-type">Report</label>
+          <label for="report-type">${t('reports.report')}</label>
           <select id="report-type">${Object.entries(REPORTS).map(([key, r]) => `<option value="${key}">${r.label}</option>`).join('')}</select>
         </div>
-        <div class="form-field" id="from-field"><label for="report-from">From</label><input type="date" id="report-from" /></div>
-        <div class="form-field" id="to-field"><label for="report-to">To</label><input type="date" id="report-to" /></div>
-        <div class="form-field" id="date-field" class="hidden"><label for="report-date">Date</label><input type="date" id="report-date" /></div>
+        <div class="form-field" id="from-field"><label for="report-from">${t('reports.from')}</label><input type="date" id="report-from" /></div>
+        <div class="form-field" id="to-field"><label for="report-to">${t('reports.to')}</label><input type="date" id="report-to" /></div>
+        <div class="form-field" id="date-field" class="hidden"><label for="report-date">${t('reports.date')}</label><input type="date" id="report-date" /></div>
       </div>
       <div style="display:flex; gap: var(--spacing-3); margin-bottom: var(--spacing-4);">
-        <button class="btn btn-primary" id="view-btn">View</button>
+        <button class="btn btn-primary" id="view-btn">${t('reports.view')}</button>
         ${authStore.hasPermission('reports:export') || authStore.hasPermission('reports:view') ? `
-          <button class="btn btn-secondary" id="export-pdf-btn">Export PDF</button>
-          <button class="btn btn-secondary" id="export-excel-btn">Export Excel</button>
+          <button class="btn btn-secondary" id="export-pdf-btn">${t('reports.exportPdf')}</button>
+          <button class="btn btn-secondary" id="export-excel-btn">${t('reports.exportExcel')}</button>
         ` : ''}
       </div>
       <div id="report-results"></div>
@@ -87,8 +92,8 @@ export function render(container) {
       const data = await api.get(config.path, params);
       resultsEl.innerHTML = renderGenericTable(data);
     } catch (error) {
-      toastError(error.message || 'Failed to load report.');
-      resultsEl.innerHTML = '<div class="empty-state">Failed to load report.</div>';
+      toastError(error.message || t('reports.loadFailed'));
+      resultsEl.innerHTML = `<div class="empty-state">${t('reports.loadFailed')}</div>`;
     }
   });
 
@@ -103,7 +108,7 @@ export function render(container) {
       link.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      toastError(error.message || 'Failed to export report.');
+      toastError(error.message || t('reports.exportFailed'));
     }
   }
 

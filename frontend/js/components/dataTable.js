@@ -1,5 +1,6 @@
 import { toastError } from './toast.js';
 import { RawHtml } from '../utils/html.js';
+import { t } from '../i18n/index.js';
 
 // A reusable, paginated, searchable, sortable table bound to a server-side `fetchPage` function.
 // fetchPage receives { pageNumber, pageSize, searchTerm, sortBy, sortDescending, ...extraParams }
@@ -12,7 +13,7 @@ export function createDataTable(container, options) {
     pageSize = 10,
     searchable = true,
     getExtraParams = () => ({}),
-    emptyMessage = 'No records found.',
+    emptyMessage = t('common.noRecordsFound'),
     rowActions = null,
   } = options;
 
@@ -34,7 +35,7 @@ export function createDataTable(container, options) {
     searchWrap.className = 'search-input-wrap';
     const searchInput = document.createElement('input');
     searchInput.type = 'search';
-    searchInput.placeholder = 'Search…';
+    searchInput.placeholder = t('common.search');
     let debounceHandle;
     searchInput.addEventListener('input', () => {
       clearTimeout(debounceHandle);
@@ -111,8 +112,8 @@ export function createDataTable(container, options) {
       renderRows(items);
       renderPagination(totalCount, isPaged);
     } catch (error) {
-      tbody.innerHTML = `<tr><td colspan="${columns.length + (rowActions ? 1 : 0)}"><div class="empty-state">Failed to load data.</div></td></tr>`;
-      toastError(error.message || 'Failed to load data.');
+      tbody.innerHTML = `<tr><td colspan="${columns.length + (rowActions ? 1 : 0)}"><div class="empty-state">${t('common.failedToLoadData')}</div></td></tr>`;
+      toastError(error.message || t('common.failedToLoadData'));
     }
   }
 
@@ -159,7 +160,7 @@ export function createDataTable(container, options) {
 
   function renderPagination(totalCount, isPaged) {
     if (!isPaged) {
-      pagination.innerHTML = `<span>${totalCount} record${totalCount === 1 ? '' : 's'}</span>`;
+      pagination.innerHTML = `<span>${t('common.recordsSummary', { count: totalCount, plural: totalCount === 1 ? '' : 's' })}</span>`;
       return;
     }
 
@@ -167,14 +168,14 @@ export function createDataTable(container, options) {
     pagination.innerHTML = '';
 
     const summary = document.createElement('span');
-    summary.textContent = `Page ${state.pageNumber} of ${totalPages} · ${totalCount} total`;
+    summary.textContent = t('common.pageSummary', { page: state.pageNumber, total: totalPages, count: totalCount });
 
     const controls = document.createElement('div');
     controls.className = 'table-pagination__controls';
 
     const prevBtn = document.createElement('button');
     prevBtn.className = 'btn btn-sm btn-secondary';
-    prevBtn.textContent = 'Previous';
+    prevBtn.textContent = t('common.previous');
     prevBtn.disabled = state.pageNumber <= 1;
     prevBtn.addEventListener('click', () => {
       state.pageNumber -= 1;
@@ -183,7 +184,7 @@ export function createDataTable(container, options) {
 
     const nextBtn = document.createElement('button');
     nextBtn.className = 'btn btn-sm btn-secondary';
-    nextBtn.textContent = 'Next';
+    nextBtn.textContent = t('common.next');
     nextBtn.disabled = state.pageNumber >= totalPages;
     nextBtn.addEventListener('click', () => {
       state.pageNumber += 1;

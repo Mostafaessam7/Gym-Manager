@@ -45,7 +45,7 @@
   --spacing-5: 24px;
   --spacing-6: 32px;
 
-  --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: "Segoe UI", "Tahoma", -apple-system, BlinkMacSystemFont, Roboto, "Noto Sans Arabic", Helvetica, Arial, sans-serif;
 
   --transition-fast: 150ms ease;
   --transition-med: 220ms cubic-bezier(0.4, 0, 0.2, 1);

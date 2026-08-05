@@ -4,10 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gym Manager</title>
+  <script>
+    // Applied synchronously, before the stylesheets paint, to avoid a flash of the wrong theme/language —
+    // see the matching comment in index.html. app.js's initTheme()/i18n's initI18n() re-apply the same
+    // attributes on module load (harmless no-op if already set) and wire up the toggle buttons.
+    (function () {
+      try {
+        var theme = localStorage.getItem('gym.theme');
+        if (theme) document.documentElement.setAttribute('data-theme', theme);
+        var locale = localStorage.getItem('gym.locale') || 'en';
+        document.documentElement.setAttribute('lang', locale);
+        document.documentElement.setAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
+      } catch { /* localStorage unavailable — fall back to the OS-level media query / English */ }
+    })();
+  </script>
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/layout.css" />
   <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/rtl.css" />
 </head>
 <body>
   <div class="app-shell">
@@ -26,6 +41,7 @@
       </div>
       <div class="topbar__actions">
         <button class="icon-btn" id="theme-toggle" title="Toggle dark / light mode">&#9789;</button>
+        <button class="icon-btn" id="lang-toggle" title="Toggle English / Arabic">EN</button>
         <div class="user-chip" id="user-chip">
           <div class="avatar" id="user-avatar">U</div>
           <span id="user-email" class="text-muted"></span>

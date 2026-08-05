@@ -5,15 +5,16 @@ import { renderForm, readForm } from '../components/form.js';
 import { toastSuccess, toastError } from '../components/toast.js';
 import { authStore } from '../auth/authStore.js';
 import { rawHtml } from '../utils/html.js';
+import { t, tStatus } from '../i18n/index.js';
 
 function planFields(plan = {}) {
   return [
-    { name: 'name', label: 'Plan Name', value: plan.name, required: true },
-    { name: 'description', label: 'Description', type: 'textarea', value: plan.description, span2: true, required: true },
-    { name: 'price', label: 'Price', type: 'number', step: '0.01', value: plan.price, required: true },
-    { name: 'currency', label: 'Currency', value: plan.currency || 'USD', required: true },
-    { name: 'durationInDays', label: 'Duration (days)', type: 'number', value: plan.durationInDays, required: true },
-    { name: 'maxFreezeDays', label: 'Max Freeze Days', type: 'number', value: plan.maxFreezeDays ?? 0 },
+    { name: 'name', label: t('memberships.planName'), value: plan.name, required: true },
+    { name: 'description', label: t('memberships.description'), type: 'textarea', value: plan.description, span2: true, required: true },
+    { name: 'price', label: t('memberships.price'), type: 'number', step: '0.01', value: plan.price, required: true },
+    { name: 'currency', label: t('memberships.currency'), value: plan.currency || 'USD', required: true },
+    { name: 'durationInDays', label: t('memberships.durationDays'), type: 'number', value: plan.durationInDays, required: true },
+    { name: 'maxFreezeDays', label: t('memberships.maxFreezeDays'), type: 'number', value: plan.maxFreezeDays ?? 0 },
   ];
 }
 
@@ -22,25 +23,25 @@ function openPlanModal(existing, onSaved) {
   const body = renderForm(fields);
 
   openModal({
-    title: existing ? 'Edit Plan' : 'New Membership Plan',
+    title: existing ? t('memberships.editPlan') : t('memberships.newPlanTitle'),
     wide: true,
     bodyHtml: '',
     onMount: (ctrl) => ctrl.bodyElement.appendChild(body),
     footerButtons: [
-      { label: 'Cancel', className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
+      { label: t('common.cancel'), className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
       {
-        label: 'Save',
+        label: t('common.save'),
         className: 'btn-primary',
         onClick: async (ctrl) => {
           const values = readForm(body, fields);
           try {
             if (existing) await api.put(`/membership-plans/${existing.id}`, values);
             else await api.post('/membership-plans', values);
-            toastSuccess(`Plan ${existing ? 'updated' : 'created'}.`);
+            toastSuccess(existing ? t('memberships.planUpdated') : t('memberships.planCreated'));
             ctrl.close();
             onSaved();
           } catch (error) {
-            toastError(error.message || 'Failed to save plan.');
+            toastError(error.message || t('memberships.saveFailed'));
           }
         },
       },
@@ -55,29 +56,29 @@ async function openPurchaseModal(onSaved) {
   ]);
 
   const fields = [
-    { name: 'memberId', label: 'Member', type: 'select', required: true, options: members.items.map((m) => ({ value: m.id, label: `${m.firstName} ${m.lastName} (${m.memberCode})` })) },
-    { name: 'membershipPlanId', label: 'Plan', type: 'select', required: true, options: plans.map((p) => ({ value: p.id, label: `${p.name} — ${p.price} ${p.currency}` })) },
-    { name: 'startDate', label: 'Start Date', type: 'date', value: new Date().toISOString().slice(0, 10), required: true },
+    { name: 'memberId', label: t('memberships.memberCol'), type: 'select', required: true, options: members.items.map((m) => ({ value: m.id, label: `${m.firstName} ${m.lastName} (${m.memberCode})` })) },
+    { name: 'membershipPlanId', label: t('memberships.plan'), type: 'select', required: true, options: plans.map((p) => ({ value: p.id, label: `${p.name} — ${p.price} ${p.currency}` })) },
+    { name: 'startDate', label: t('memberships.startDate'), type: 'date', value: new Date().toISOString().slice(0, 10), required: true },
   ];
   const body = renderForm(fields);
 
   openModal({
-    title: 'Purchase Membership',
+    title: t('memberships.purchaseMembershipTitle'),
     bodyHtml: '',
     onMount: (ctrl) => ctrl.bodyElement.appendChild(body),
     footerButtons: [
-      { label: 'Cancel', className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
+      { label: t('common.cancel'), className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
       {
-        label: 'Purchase',
+        label: t('memberships.purchase'),
         className: 'btn-primary',
         onClick: async (ctrl) => {
           try {
             await api.post('/memberships', readForm(body, fields));
-            toastSuccess('Membership purchased.');
+            toastSuccess(t('memberships.membershipPurchased'));
             ctrl.close();
             onSaved();
           } catch (error) {
-            toastError(error.message || 'Failed to purchase membership.');
+            toastError(error.message || t('memberships.purchaseFailed'));
           }
         },
       },
@@ -87,29 +88,29 @@ async function openPurchaseModal(onSaved) {
 
 async function openRenewModal(membership, onSaved) {
   const fields = [
-    { name: 'additionalDays', label: 'Additional Days', type: 'number', value: 30, required: true },
-    { name: 'amountPaid', label: 'Amount Paid', type: 'number', step: '0.01', required: true },
-    { name: 'currency', label: 'Currency', value: 'USD', required: true },
+    { name: 'additionalDays', label: t('memberships.additionalDays'), type: 'number', value: 30, required: true },
+    { name: 'amountPaid', label: t('memberships.amountPaid'), type: 'number', step: '0.01', required: true },
+    { name: 'currency', label: t('memberships.currency'), value: 'USD', required: true },
   ];
   const body = renderForm(fields);
 
   openModal({
-    title: 'Renew Membership',
+    title: t('memberships.renewMembershipTitle'),
     bodyHtml: '',
     onMount: (ctrl) => ctrl.bodyElement.appendChild(body),
     footerButtons: [
-      { label: 'Cancel', className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
+      { label: t('common.cancel'), className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
       {
-        label: 'Renew',
+        label: t('memberships.renew'),
         className: 'btn-primary',
         onClick: async (ctrl) => {
           try {
             await api.post(`/memberships/${membership.id}/renew`, readForm(body, fields));
-            toastSuccess('Membership renewed.');
+            toastSuccess(t('memberships.membershipRenewed'));
             ctrl.close();
             onSaved();
           } catch (error) {
-            toastError(error.message || 'Failed to renew membership.');
+            toastError(error.message || t('memberships.renewFailed'));
           }
         },
       },
@@ -120,7 +121,7 @@ async function openRenewModal(membership, onSaved) {
 function renderPlansTab(container) {
   container.innerHTML = `
     <div class="card-header">
-      ${authStore.hasPermission('memberships:manage') ? '<button class="btn btn-primary" id="new-plan-btn">+ New Plan</button>' : '<span></span>'}
+      ${authStore.hasPermission('memberships:manage') ? `<button class="btn btn-primary" id="new-plan-btn">${t('memberships.newPlan')}</button>` : '<span></span>'}
     </div>
     <div id="plans-table"></div>
   `;
@@ -128,17 +129,17 @@ function renderPlansTab(container) {
   createDataTable(document.getElementById('plans-table'), {
     searchable: false,
     columns: [
-      { label: 'Name', key: 'name' },
-      { label: 'Price', render: (p) => `${p.price} ${p.currency}` },
-      { label: 'Duration', render: (p) => `${p.durationInDays} days` },
-      { label: 'Status', render: (p) => rawHtml(`<span class="badge badge-${p.isActive ? 'success' : 'neutral'}">${p.isActive ? 'Active' : 'Inactive'}</span>`) },
+      { label: t('memberships.name'), key: 'name' },
+      { label: t('memberships.priceCol'), render: (p) => `${p.price} ${p.currency}` },
+      { label: t('memberships.durationCol'), render: (p) => t('memberships.durationDaysValue', { days: p.durationInDays }) },
+      { label: t('memberships.statusCol'), render: (p) => rawHtml(`<span class="badge badge-${p.isActive ? 'success' : 'neutral'}">${p.isActive ? tStatus('Active') : tStatus('Inactive')}</span>`) },
     ],
     fetchPage: () => api.get('/membership-plans', { includeInactive: true }),
     rowActions: authStore.hasPermission('memberships:manage') ? (plan) => [
-      { label: 'Edit', onClick: (row, reload) => openPlanModal(row, reload) },
+      { label: t('common.edit'), onClick: (row, reload) => openPlanModal(row, reload) },
       ...(plan.isActive ? [{
-        label: 'Deactivate', className: 'btn-danger',
-        onClick: async (row, reload) => { await api.post(`/membership-plans/${row.id}/deactivate`); toastSuccess('Plan deactivated.'); reload(); },
+        label: t('common.deactivate'), className: 'btn-danger',
+        onClick: async (row, reload) => { await api.post(`/membership-plans/${row.id}/deactivate`); toastSuccess(t('memberships.planDeactivated')); reload(); },
       }] : []),
     ] : null,
   });
@@ -149,7 +150,7 @@ function renderPlansTab(container) {
 function renderSubscriptionsTab(container) {
   container.innerHTML = `
     <div class="card-header">
-      ${authStore.hasPermission('memberships:manage') ? '<button class="btn btn-primary" id="purchase-btn">+ Purchase Membership</button>' : '<span></span>'}
+      ${authStore.hasPermission('memberships:manage') ? `<button class="btn btn-primary" id="purchase-btn">${t('memberships.purchaseMembership')}</button>` : '<span></span>'}
     </div>
     <div id="expiring-table"></div>
   `;
@@ -157,14 +158,14 @@ function renderSubscriptionsTab(container) {
   createDataTable(document.getElementById('expiring-table'), {
     searchable: false,
     columns: [
-      { label: 'Member', render: (m) => m.memberId },
-      { label: 'Plan', key: 'planNameSnapshot' },
-      { label: 'End Date', render: (m) => m.endDate },
-      { label: 'Status', render: (m) => rawHtml(`<span class="badge badge-info">${m.status}</span>`) },
+      { label: t('memberships.memberCol'), render: (m) => m.memberId },
+      { label: t('memberships.plan'), key: 'planNameSnapshot' },
+      { label: t('memberships.endDate'), render: (m) => m.endDate },
+      { label: t('memberships.statusCol'), render: (m) => rawHtml(`<span class="badge badge-info">${tStatus(m.status)}</span>`) },
     ],
     fetchPage: () => api.get('/memberships/expiring', { withinDays: 14 }),
     rowActions: authStore.hasPermission('memberships:renew') ? (membership) => [
-      { label: 'Renew', onClick: (row, reload) => openRenewModal(row, reload) },
+      { label: t('memberships.renew'), onClick: (row, reload) => openRenewModal(row, reload) },
     ] : null,
   });
 
@@ -174,10 +175,10 @@ function renderSubscriptionsTab(container) {
 export function render(container) {
   container.innerHTML = `
     <div class="card">
-      <h2>Memberships</h2>
+      <h2>${t('memberships.title')}</h2>
       <div class="tabs">
-        <div class="tab active" data-tab="plans">Plans</div>
-        <div class="tab" data-tab="subscriptions">Expiring Subscriptions</div>
+        <div class="tab active" data-tab="plans">${t('memberships.plans')}</div>
+        <div class="tab" data-tab="subscriptions">${t('memberships.expiringSubscriptions')}</div>
       </div>
       <div id="tab-content"></div>
     </div>
@@ -188,7 +189,7 @@ export function render(container) {
 
   container.querySelectorAll('.tab').forEach((tabEl) => {
     tabEl.addEventListener('click', () => {
-      container.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+      container.querySelectorAll('.tab').forEach((t2) => t2.classList.remove('active'));
       tabEl.classList.add('active');
       if (tabEl.dataset.tab === 'plans') renderPlansTab(tabContent);
       else renderSubscriptionsTab(tabContent);

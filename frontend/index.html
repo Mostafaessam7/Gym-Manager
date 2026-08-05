@@ -4,8 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign in · Gym Manager</title>
+  <script>
+    // Applied synchronously, before the stylesheets paint, so a user who picked dark/light mode or a
+    // language on the dashboard doesn't see the login page flash back to the OS/English default —
+    // variables.css's dark theme and rtl.css's mirrored layout only kick in via these attributes (or the
+    // prefers-color-scheme media query for theme), so this mirrors what js/i18n/index.js's initI18n() and
+    // app.js's initTheme() do on the dashboard, keeping both entry points in sync from the same day one.
+    (function () {
+      try {
+        var theme = localStorage.getItem('gym.theme');
+        if (theme) document.documentElement.setAttribute('data-theme', theme);
+        var locale = localStorage.getItem('gym.locale') || 'en';
+        document.documentElement.setAttribute('lang', locale);
+        document.documentElement.setAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
+      } catch { /* localStorage unavailable (e.g. blocked) — fall back to the OS-level media query / English */ }
+    })();
+  </script>
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/rtl.css" />
   <style>
     .login-shell {
       min-height: 100vh;
@@ -14,6 +31,15 @@
       justify-content: center;
       background: radial-gradient(circle at top left, var(--color-primary-light), var(--color-bg) 60%);
       padding: var(--spacing-4);
+      position: relative;
+    }
+
+    .login-toggles {
+      position: absolute;
+      top: var(--spacing-4);
+      inset-inline-end: var(--spacing-4);
+      display: flex;
+      gap: var(--spacing-2);
     }
 
     .login-card {
@@ -106,6 +132,10 @@
 </head>
 <body>
   <div class="login-shell">
+    <div class="login-toggles">
+      <button class="icon-btn" id="theme-toggle" type="button">&#9789;</button>
+      <button class="icon-btn" id="lang-toggle" type="button">EN</button>
+    </div>
     <div class="login-card">
       <div class="login-brand">
         <div class="login-brand-mark">GM</div>
@@ -116,17 +146,17 @@
 
       <form id="login-form">
         <div class="login-field">
-          <label for="email">Email</label>
+          <label for="email" id="login-email-label">Email</label>
           <input type="email" id="email" name="email" autocomplete="username" required />
         </div>
         <div class="login-field">
-          <label for="password">Password</label>
+          <label for="password" id="login-password-label">Password</label>
           <input type="password" id="password" name="password" autocomplete="current-password" required />
         </div>
         <button type="submit" class="login-submit" id="login-submit">Sign in</button>
       </form>
 
-      <p class="login-hint text-muted">Default seeded account: admin@gymmanager.local</p>
+      <p class="login-hint text-muted" id="login-hint">Default seeded account: admin@gymmanager.local</p>
     </div>
   </div>
 

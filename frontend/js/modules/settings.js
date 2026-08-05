@@ -4,33 +4,34 @@ import { openModal } from '../components/modal.js';
 import { renderForm, readForm } from '../components/form.js';
 import { toastSuccess, toastError } from '../components/toast.js';
 import { rawHtml } from '../utils/html.js';
+import { t } from '../i18n/index.js';
 
 function openSettingModal(onSaved) {
   const fields = [
-    { name: 'key', label: 'Key', required: true },
-    { name: 'value', label: 'Value', required: true },
-    { name: 'description', label: 'Description', type: 'textarea', span2: true },
+    { name: 'key', label: t('settings.key'), required: true },
+    { name: 'value', label: t('settings.value'), required: true },
+    { name: 'description', label: t('settings.description'), type: 'textarea', span2: true },
   ];
   const body = renderForm(fields);
 
   openModal({
-    title: 'Add / Update Setting',
+    title: t('settings.addSettingTitle'),
     wide: true,
     bodyHtml: '',
     onMount: (ctrl) => ctrl.bodyElement.appendChild(body),
     footerButtons: [
-      { label: 'Cancel', className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
+      { label: t('common.cancel'), className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
       {
-        label: 'Save',
+        label: t('settings.save'),
         className: 'btn-primary',
         onClick: async (ctrl) => {
           try {
             await api.put('/settings', readForm(body, fields));
-            toastSuccess('Setting saved.');
+            toastSuccess(t('settings.settingSaved'));
             ctrl.close();
             onSaved();
           } catch (error) {
-            toastError(error.message || 'Failed to save setting.');
+            toastError(error.message || t('settings.saveFailed'));
           }
         },
       },
@@ -42,8 +43,8 @@ export function render(container) {
   container.innerHTML = `
     <div class="card">
       <div class="card-header">
-        <h2>Global Settings</h2>
-        <button class="btn btn-primary" id="new-setting-btn">+ Add Setting</button>
+        <h2>${t('settings.title')}</h2>
+        <button class="btn btn-primary" id="new-setting-btn">${t('settings.addSetting')}</button>
       </div>
       <div id="settings-table"></div>
     </div>
@@ -52,15 +53,15 @@ export function render(container) {
   const table = createDataTable(document.getElementById('settings-table'), {
     searchable: false,
     columns: [
-      { label: 'Key', key: 'key' },
-      { label: 'Value', key: 'value' },
-      { label: 'Description', render: (s) => s.description || rawHtml('<span class="text-muted">—</span>') },
+      { label: t('settings.keyCol'), key: 'key' },
+      { label: t('settings.valueCol'), key: 'value' },
+      { label: t('settings.descriptionCol'), render: (s) => s.description || rawHtml('<span class="text-muted">—</span>') },
     ],
     fetchPage: () => api.get('/settings'),
     rowActions: (setting) => [
       {
-        label: 'Delete', className: 'btn-danger',
-        onClick: async (row, reload) => { await api.delete(`/settings/${row.id}`); toastSuccess('Setting deleted.'); reload(); },
+        label: t('settings.delete'), className: 'btn-danger',
+        onClick: async (row, reload) => { await api.delete(`/settings/${row.id}`); toastSuccess(t('settings.settingDeleted')); reload(); },
       },
     ],
   });

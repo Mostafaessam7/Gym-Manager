@@ -5,44 +5,45 @@ import { renderForm, readForm } from '../components/form.js';
 import { toastSuccess, toastError } from '../components/toast.js';
 import { authStore } from '../auth/authStore.js';
 import { rawHtml } from '../utils/html.js';
+import { t, tStatus } from '../i18n/index.js';
 
 async function openClassModal(existing, onSaved) {
   const trainers = await api.get('/trainers');
   const fields = [
-    { name: 'name', label: 'Class Name', value: existing?.name, required: true },
-    { name: 'description', label: 'Description', type: 'textarea', value: existing?.description, span2: true },
-    { name: 'trainerId', label: 'Trainer', type: 'select', required: true, value: existing?.trainerId, options: trainers.map((t) => ({ value: t.id, label: `${t.firstName} ${t.lastName}` })) },
-    { name: 'capacity', label: 'Capacity', type: 'number', value: existing?.capacity ?? 10, required: true },
-    { name: 'durationMinutes', label: 'Duration (minutes)', type: 'number', value: existing?.durationMinutes ?? 60, required: true },
+    { name: 'name', label: t('classes.className'), value: existing?.name, required: true },
+    { name: 'description', label: t('classes.description'), type: 'textarea', value: existing?.description, span2: true },
+    { name: 'trainerId', label: t('classes.trainer'), type: 'select', required: true, value: existing?.trainerId, options: trainers.map((tr) => ({ value: tr.id, label: `${tr.firstName} ${tr.lastName}` })) },
+    { name: 'capacity', label: t('classes.capacity'), type: 'number', value: existing?.capacity ?? 10, required: true },
+    { name: 'durationMinutes', label: t('classes.duration'), type: 'number', value: existing?.durationMinutes ?? 60, required: true },
   ];
 
   if (!existing) {
     const branches = await api.get('/branches');
-    fields.splice(2, 0, { name: 'branchId', label: 'Branch', type: 'select', required: true, options: branches.map((b) => ({ value: b.id, label: b.name })) });
+    fields.splice(2, 0, { name: 'branchId', label: t('classes.branch'), type: 'select', required: true, options: branches.map((b) => ({ value: b.id, label: b.name })) });
   }
 
   const body = renderForm(fields);
 
   openModal({
-    title: existing ? 'Edit Class' : 'New Class',
+    title: existing ? t('classes.editClass') : t('classes.newClassTitle'),
     wide: true,
     bodyHtml: '',
     onMount: (ctrl) => ctrl.bodyElement.appendChild(body),
     footerButtons: [
-      { label: 'Cancel', className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
+      { label: t('common.cancel'), className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
       {
-        label: 'Save',
+        label: t('common.save'),
         className: 'btn-primary',
         onClick: async (ctrl) => {
           const values = readForm(body, fields);
           try {
             if (existing) await api.put(`/classes/${existing.id}`, values);
             else await api.post('/classes', values);
-            toastSuccess(`Class ${existing ? 'updated' : 'created'}.`);
+            toastSuccess(existing ? t('classes.classUpdated') : t('classes.classCreated'));
             ctrl.close();
             onSaved();
           } catch (error) {
-            toastError(error.message || 'Failed to save class.');
+            toastError(error.message || t('classes.saveFailed'));
           }
         },
       },
@@ -53,22 +54,22 @@ async function openClassModal(existing, onSaved) {
 async function openScheduleModal(onSaved) {
   const classes = await api.get('/classes');
   const fields = [
-    { name: 'gymClassId', label: 'Class', type: 'select', required: true, options: classes.map((c) => ({ value: c.id, label: c.name })) },
-    { name: 'startUtc', label: 'Start', type: 'datetime-local', required: true },
-    { name: 'endUtc', label: 'End', type: 'datetime-local', required: true },
-    { name: 'capacityOverride', label: 'Capacity Override', type: 'number' },
+    { name: 'gymClassId', label: t('classes.class'), type: 'select', required: true, options: classes.map((c) => ({ value: c.id, label: c.name })) },
+    { name: 'startUtc', label: t('classes.start'), type: 'datetime-local', required: true },
+    { name: 'endUtc', label: t('classes.end'), type: 'datetime-local', required: true },
+    { name: 'capacityOverride', label: t('classes.capacityOverride'), type: 'number' },
   ];
   const body = renderForm(fields);
 
   openModal({
-    title: 'Schedule Session',
+    title: t('classes.scheduleSessionTitle'),
     wide: true,
     bodyHtml: '',
     onMount: (ctrl) => ctrl.bodyElement.appendChild(body),
     footerButtons: [
-      { label: 'Cancel', className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
+      { label: t('common.cancel'), className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
       {
-        label: 'Schedule',
+        label: t('classes.schedule'),
         className: 'btn-primary',
         onClick: async (ctrl) => {
           const values = readForm(body, fields);
@@ -78,11 +79,11 @@ async function openScheduleModal(onSaved) {
               startUtc: new Date(values.startUtc).toISOString(),
               endUtc: new Date(values.endUtc).toISOString(),
             });
-            toastSuccess('Session scheduled.');
+            toastSuccess(t('classes.sessionScheduled'));
             ctrl.close();
             onSaved();
           } catch (error) {
-            toastError(error.message || 'Failed to schedule session.');
+            toastError(error.message || t('classes.scheduleFailed'));
           }
         },
       },
@@ -93,27 +94,27 @@ async function openScheduleModal(onSaved) {
 async function openBookModal(session, onSaved) {
   const members = await api.get('/members', { pageSize: 100 });
   const fields = [
-    { name: 'memberId', label: 'Member', type: 'select', required: true, options: members.items.map((m) => ({ value: m.id, label: `${m.firstName} ${m.lastName}` })) },
+    { name: 'memberId', label: t('common.member'), type: 'select', required: true, options: members.items.map((m) => ({ value: m.id, label: `${m.firstName} ${m.lastName}` })) },
   ];
   const body = renderForm(fields);
 
   openModal({
-    title: 'Book Session',
+    title: t('classes.bookSessionTitle'),
     bodyHtml: '',
     onMount: (ctrl) => ctrl.bodyElement.appendChild(body),
     footerButtons: [
-      { label: 'Cancel', className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
+      { label: t('common.cancel'), className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
       {
-        label: 'Book',
+        label: t('classes.book'),
         className: 'btn-primary',
         onClick: async (ctrl) => {
           try {
             await api.post(`/class-sessions/${session.id}/book`, readForm(body, fields));
-            toastSuccess('Booking confirmed.');
+            toastSuccess(t('classes.bookingConfirmed'));
             ctrl.close();
             onSaved();
           } catch (error) {
-            toastError(error.message || 'Failed to book session.');
+            toastError(error.message || t('classes.bookFailed'));
           }
         },
       },
@@ -124,7 +125,7 @@ async function openBookModal(session, onSaved) {
 function renderClassesTab(container) {
   container.innerHTML = `
     <div class="card-header">
-      ${authStore.hasPermission('classes:manage') ? '<button class="btn btn-primary" id="new-class-btn">+ New Class</button>' : '<span></span>'}
+      ${authStore.hasPermission('classes:manage') ? `<button class="btn btn-primary" id="new-class-btn">${t('classes.newClass')}</button>` : '<span></span>'}
     </div>
     <div id="classes-table"></div>
   `;
@@ -132,17 +133,17 @@ function renderClassesTab(container) {
   createDataTable(document.getElementById('classes-table'), {
     searchable: false,
     columns: [
-      { label: 'Name', key: 'name' },
-      { label: 'Capacity', key: 'capacity' },
-      { label: 'Duration (min)', key: 'durationMinutes' },
-      { label: 'Status', render: (c) => rawHtml(`<span class="badge badge-${c.isActive ? 'success' : 'neutral'}">${c.isActive ? 'Active' : 'Inactive'}</span>`) },
+      { label: t('classes.name'), key: 'name' },
+      { label: t('classes.capacityCol'), key: 'capacity' },
+      { label: t('classes.durationCol'), key: 'durationMinutes' },
+      { label: t('classes.statusCol'), render: (c) => rawHtml(`<span class="badge badge-${c.isActive ? 'success' : 'neutral'}">${c.isActive ? tStatus('Active') : tStatus('Inactive')}</span>`) },
     ],
     fetchPage: () => api.get('/classes', { includeInactive: true }),
     rowActions: authStore.hasPermission('classes:manage') ? (gymClass) => [
-      { label: 'Edit', onClick: (row, reload) => openClassModal(row, reload) },
+      { label: t('common.edit'), onClick: (row, reload) => openClassModal(row, reload) },
       ...(gymClass.isActive ? [{
-        label: 'Deactivate', className: 'btn-danger',
-        onClick: async (row, reload) => { await api.post(`/classes/${row.id}/deactivate`); toastSuccess('Class deactivated.'); reload(); },
+        label: t('common.deactivate'), className: 'btn-danger',
+        onClick: async (row, reload) => { await api.post(`/classes/${row.id}/deactivate`); toastSuccess(t('classes.classDeactivated')); reload(); },
       }] : []),
     ] : null,
   });
@@ -153,7 +154,7 @@ function renderClassesTab(container) {
 function renderSessionsTab(container) {
   container.innerHTML = `
     <div class="card-header">
-      ${authStore.hasPermission('classes:manage') ? '<button class="btn btn-primary" id="schedule-btn">+ Schedule Session</button>' : '<span></span>'}
+      ${authStore.hasPermission('classes:manage') ? `<button class="btn btn-primary" id="schedule-btn">${t('classes.scheduleSession')}</button>` : '<span></span>'}
     </div>
     <div id="sessions-table"></div>
   `;
@@ -161,20 +162,20 @@ function renderSessionsTab(container) {
   const table = createDataTable(document.getElementById('sessions-table'), {
     searchable: false,
     columns: [
-      { label: 'Start', render: (s) => new Date(s.startUtc).toLocaleString() },
-      { label: 'Bookings', render: (s) => `${s.activeBookingsCount} / ${s.capacity}` },
-      { label: 'Status', render: (s) => rawHtml(`<span class="badge badge-info">${s.status}</span>`) },
+      { label: t('classes.startCol'), render: (s) => new Date(s.startUtc).toLocaleString() },
+      { label: t('classes.bookingsCol'), render: (s) => `${s.activeBookingsCount} / ${s.capacity}` },
+      { label: t('classes.statusCol'), render: (s) => rawHtml(`<span class="badge badge-info">${tStatus(s.status)}</span>`) },
     ],
     fetchPage: () => api.get('/class-sessions'),
     rowActions: (session) => {
       const actions = [];
       if (authStore.hasPermission('classes:book') && session.status === 'Scheduled') {
-        actions.push({ label: 'Book', onClick: (row, reload) => openBookModal(row, reload) });
+        actions.push({ label: t('classes.book'), onClick: (row, reload) => openBookModal(row, reload) });
       }
       if (authStore.hasPermission('classes:manage') && session.status === 'Scheduled') {
         actions.push({
-          label: 'Cancel', className: 'btn-danger',
-          onClick: async (row, reload) => { await api.post(`/class-sessions/${row.id}/cancel`); toastSuccess('Session cancelled.'); reload(); },
+          label: t('classes.cancel'), className: 'btn-danger',
+          onClick: async (row, reload) => { await api.post(`/class-sessions/${row.id}/cancel`); toastSuccess(t('classes.sessionCancelled')); reload(); },
         });
       }
       return actions;
@@ -187,10 +188,10 @@ function renderSessionsTab(container) {
 export function render(container) {
   container.innerHTML = `
     <div class="card">
-      <h2>Classes & Scheduling</h2>
+      <h2>${t('classes.title')}</h2>
       <div class="tabs">
-        <div class="tab active" data-tab="classes">Class Catalog</div>
-        <div class="tab" data-tab="sessions">Sessions</div>
+        <div class="tab active" data-tab="classes">${t('classes.classCatalog')}</div>
+        <div class="tab" data-tab="sessions">${t('classes.sessions')}</div>
       </div>
       <div id="tab-content"></div>
     </div>
@@ -201,7 +202,7 @@ export function render(container) {
 
   container.querySelectorAll('.tab').forEach((tabEl) => {
     tabEl.addEventListener('click', () => {
-      container.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+      container.querySelectorAll('.tab').forEach((el) => el.classList.remove('active'));
       tabEl.classList.add('active');
       if (tabEl.dataset.tab === 'classes') renderClassesTab(tabContent);
       else renderSessionsTab(tabContent);

@@ -1,4 +1,5 @@
 import { escapeHtml } from '../utils/html.js';
+import { t } from '../i18n/index.js';
 
 // Reusable modal dialog. Returns a controller with .close() so callers can dismiss programmatically.
 // `title` is treated as plain text (escaped) — it is a label, never markup. `bodyHtml` is trusted markup
@@ -67,13 +68,13 @@ export function openModal({ title, bodyHtml, wide = false, footerButtons = [], o
 }
 
 // `message` is treated as plain text (escaped) — callers pass a sentence, not markup.
-export function confirmDialog(message, { title = 'Please confirm', confirmLabel = 'Confirm', danger = true } = {}) {
+export function confirmDialog(message, { title = t('common.pleaseConfirm'), confirmLabel = t('common.confirm'), danger = true } = {}) {
   return new Promise((resolve) => {
     openModal({
       title,
       bodyHtml: `<p>${escapeHtml(message)}</p>`,
       footerButtons: [
-        { label: 'Cancel', className: 'btn-secondary', onClick: (ctrl) => { ctrl.close(); resolve(false); } },
+        { label: t('common.cancel'), className: 'btn-secondary', onClick: (ctrl) => { ctrl.close(); resolve(false); } },
         {
           label: confirmLabel,
           className: danger ? 'btn-danger' : 'btn-primary',

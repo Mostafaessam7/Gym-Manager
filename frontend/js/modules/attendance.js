@@ -3,26 +3,27 @@ import { createDataTable } from '../components/dataTable.js';
 import { toastSuccess, toastError } from '../components/toast.js';
 import { authStore } from '../auth/authStore.js';
 import { rawHtml } from '../utils/html.js';
+import { t, tStatus } from '../i18n/index.js';
 
 export function render(container) {
   container.innerHTML = `
     ${authStore.hasPermission('attendance:check-in') ? `
       <div class="card" style="margin-bottom: var(--spacing-5);">
-        <div class="card-header"><h3>Check In</h3></div>
+        <div class="card-header"><h3>${t('attendance.checkIn')}</h3></div>
         <div class="form-grid">
           <div class="form-field">
-            <label for="checkin-code">Scan QR / Barcode Code</label>
-            <input type="text" id="checkin-code" placeholder="Scan or paste check-in code" />
+            <label for="checkin-code">${t('attendance.scanCode')}</label>
+            <input type="text" id="checkin-code" placeholder="${t('attendance.scanPlaceholder')}" />
           </div>
         </div>
         <div style="margin-top: var(--spacing-4);">
-          <button class="btn btn-primary" id="checkin-btn">Check In</button>
+          <button class="btn btn-primary" id="checkin-btn">${t('attendance.checkIn')}</button>
         </div>
       </div>
     ` : ''}
 
     <div class="card">
-      <div class="card-header"><h2>Attendance Records</h2></div>
+      <div class="card-header"><h2>${t('attendance.records')}</h2></div>
       <div id="attendance-table"></div>
     </div>
   `;
@@ -30,10 +31,10 @@ export function render(container) {
   const table = createDataTable(document.getElementById('attendance-table'), {
     searchable: false,
     columns: [
-      { label: 'Member', key: 'memberFullName' },
-      { label: 'Method', key: 'method' },
-      { label: 'Check-in', render: (r) => new Date(r.checkInUtc).toLocaleString() },
-      { label: 'Check-out', render: (r) => r.checkOutUtc ? new Date(r.checkOutUtc).toLocaleString() : rawHtml('<span class="badge badge-warning">Open</span>') },
+      { label: t('attendance.member'), key: 'memberFullName' },
+      { label: t('attendance.method'), render: (r) => tStatus(r.method) },
+      { label: t('attendance.checkInCol'), render: (r) => new Date(r.checkInUtc).toLocaleString() },
+      { label: t('attendance.checkOutCol'), render: (r) => r.checkOutUtc ? new Date(r.checkOutUtc).toLocaleString() : rawHtml(`<span class="badge badge-warning">${tStatus('Open')}</span>`) },
     ],
     fetchPage: (params) => api.get('/attendance', params),
   });
@@ -44,11 +45,11 @@ export function render(container) {
 
     try {
       await api.post('/attendance/check-in', { checkInCode: code, method: 0 });
-      toastSuccess('Member checked in.');
+      toastSuccess(t('attendance.checkedIn'));
       document.getElementById('checkin-code').value = '';
       table.refresh();
     } catch (error) {
-      toastError(error.message || 'Check-in failed.');
+      toastError(error.message || t('attendance.checkInFailed'));
     }
   });
 }

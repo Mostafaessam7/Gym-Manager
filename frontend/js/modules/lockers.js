@@ -5,32 +5,33 @@ import { renderForm, readForm } from '../components/form.js';
 import { toastSuccess, toastError } from '../components/toast.js';
 import { authStore } from '../auth/authStore.js';
 import { rawHtml } from '../utils/html.js';
+import { t, tStatus } from '../i18n/index.js';
 
 async function openNewLockerModal(onSaved) {
   const branches = await api.get('/branches');
   const fields = [
-    { name: 'branchId', label: 'Branch', type: 'select', required: true, options: branches.map((b) => ({ value: b.id, label: b.name })) },
-    { name: 'number', label: 'Locker Number', required: true },
+    { name: 'branchId', label: t('lockers.branch'), type: 'select', required: true, options: branches.map((b) => ({ value: b.id, label: b.name })) },
+    { name: 'number', label: t('lockers.lockerNumber'), required: true },
   ];
   const body = renderForm(fields);
 
   openModal({
-    title: 'New Locker',
+    title: t('lockers.newLockerTitle'),
     bodyHtml: '',
     onMount: (ctrl) => ctrl.bodyElement.appendChild(body),
     footerButtons: [
-      { label: 'Cancel', className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
+      { label: t('common.cancel'), className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
       {
-        label: 'Create',
+        label: t('lockers.create'),
         className: 'btn-primary',
         onClick: async (ctrl) => {
           try {
             await api.post('/lockers', readForm(body, fields));
-            toastSuccess('Locker created.');
+            toastSuccess(t('lockers.lockerCreated'));
             ctrl.close();
             onSaved();
           } catch (error) {
-            toastError(error.message || 'Failed to create locker.');
+            toastError(error.message || t('lockers.createFailed'));
           }
         },
       },
@@ -41,27 +42,27 @@ async function openNewLockerModal(onSaved) {
 async function openAssignModal(locker, onSaved) {
   const members = await api.get('/members', { pageSize: 100 });
   const fields = [
-    { name: 'memberId', label: 'Member', type: 'select', required: true, options: members.items.map((m) => ({ value: m.id, label: `${m.firstName} ${m.lastName}` })) },
+    { name: 'memberId', label: t('lockers.member'), type: 'select', required: true, options: members.items.map((m) => ({ value: m.id, label: `${m.firstName} ${m.lastName}` })) },
   ];
   const body = renderForm(fields);
 
   openModal({
-    title: `Assign Locker ${locker.number}`,
+    title: t('lockers.assignLockerTitle', { number: locker.number }),
     bodyHtml: '',
     onMount: (ctrl) => ctrl.bodyElement.appendChild(body),
     footerButtons: [
-      { label: 'Cancel', className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
+      { label: t('common.cancel'), className: 'btn-secondary', onClick: (ctrl) => ctrl.close() },
       {
-        label: 'Assign',
+        label: t('lockers.assign'),
         className: 'btn-primary',
         onClick: async (ctrl) => {
           try {
             await api.post(`/lockers/${locker.id}/assign`, readForm(body, fields));
-            toastSuccess('Locker assigned.');
+            toastSuccess(t('lockers.lockerAssigned'));
             ctrl.close();
             onSaved();
           } catch (error) {
-            toastError(error.message || 'Failed to assign locker.');
+            toastError(error.message || t('lockers.assignFailed'));
           }
         },
       },
@@ -73,8 +74,8 @@ export function render(container) {
   container.innerHTML = `
     <div class="card">
       <div class="card-header">
-        <h2>Lockers</h2>
-        ${authStore.hasPermission('lockers:manage') ? '<button class="btn btn-primary" id="new-locker-btn">+ New Locker</button>' : ''}
+        <h2>${t('lockers.title')}</h2>
+        ${authStore.hasPermission('lockers:manage') ? `<button class="btn btn-primary" id="new-locker-btn">${t('lockers.newLocker')}</button>` : ''}
       </div>
       <div id="lockers-table"></div>
     </div>
@@ -85,18 +86,18 @@ export function render(container) {
   const table = createDataTable(document.getElementById('lockers-table'), {
     searchable: false,
     columns: [
-      { label: 'Number', key: 'number' },
-      { label: 'Status', render: (l) => rawHtml(`<span class="badge badge-${statusBadge[l.status] || 'neutral'}">${l.status}</span>`) },
+      { label: t('lockers.numberCol'), key: 'number' },
+      { label: t('lockers.statusCol'), render: (l) => rawHtml(`<span class="badge badge-${statusBadge[l.status] || 'neutral'}">${tStatus(l.status)}</span>`) },
     ],
     fetchPage: () => api.get('/lockers'),
     rowActions: authStore.hasPermission('lockers:manage') ? (locker) => {
       const actions = [];
       if (locker.status === 'Available') {
-        actions.push({ label: 'Assign', onClick: (row, reload) => openAssignModal(row, reload) });
-        actions.push({ label: 'Maintenance', onClick: async (row, reload) => { await api.post(`/lockers/${row.id}/maintenance`); toastSuccess('Locker marked under maintenance.'); reload(); } });
+        actions.push({ label: t('lockers.assign'), onClick: (row, reload) => openAssignModal(row, reload) });
+        actions.push({ label: t('lockers.maintenance'), onClick: async (row, reload) => { await api.post(`/lockers/${row.id}/maintenance`); toastSuccess(t('lockers.lockerMaintenance')); reload(); } });
       }
       if (locker.status === 'Assigned') {
-        actions.push({ label: 'Release', className: 'btn-danger', onClick: async (row, reload) => { await api.post(`/lockers/${row.id}/release`); toastSuccess('Locker released.'); reload(); } });
+        actions.push({ label: t('lockers.release'), className: 'btn-danger', onClick: async (row, reload) => { await api.post(`/lockers/${row.id}/release`); toastSuccess(t('lockers.lockerReleased')); reload(); } });
       }
       return actions;
     } : null,

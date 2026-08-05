@@ -3,11 +3,12 @@ import { createDataTable } from '../components/dataTable.js';
 import { toastSuccess, toastError } from '../components/toast.js';
 import { authStore } from '../auth/authStore.js';
 import { rawHtml } from '../utils/html.js';
+import { t, tStatus } from '../i18n/index.js';
 
 export function render(container) {
   container.innerHTML = `
     <div class="card">
-      <div class="card-header"><h2>Invoices</h2></div>
+      <div class="card-header"><h2>${t('invoices.title')}</h2></div>
       <div id="invoices-table"></div>
     </div>
   `;
@@ -15,28 +16,28 @@ export function render(container) {
   createDataTable(document.getElementById('invoices-table'), {
     searchable: false,
     columns: [
-      { label: 'Invoice #', key: 'invoiceNumber' },
-      { label: 'Total', render: (i) => `${i.totalAmount} ${i.currency}` },
-      { label: 'Status', render: (i) => rawHtml(`<span class="badge badge-${i.status === 'Paid' ? 'success' : i.status === 'Void' ? 'danger' : 'warning'}">${i.status}</span>`) },
-      { label: 'Issued', render: (i) => new Date(i.issuedOnUtc).toLocaleDateString() },
-      { label: 'Due', render: (i) => new Date(i.dueOnUtc).toLocaleDateString() },
+      { label: t('invoices.invoiceNumber'), key: 'invoiceNumber' },
+      { label: t('invoices.total'), render: (i) => `${i.totalAmount} ${i.currency}` },
+      { label: t('invoices.statusCol'), render: (i) => rawHtml(`<span class="badge badge-${i.status === 'Paid' ? 'success' : i.status === 'Void' ? 'danger' : 'warning'}">${tStatus(i.status)}</span>`) },
+      { label: t('invoices.issued'), render: (i) => new Date(i.issuedOnUtc).toLocaleDateString() },
+      { label: t('invoices.due'), render: (i) => new Date(i.dueOnUtc).toLocaleDateString() },
     ],
     fetchPage: (params) => api.get('/invoices', params),
     rowActions: authStore.hasPermission('invoices:manage') ? (invoice) => {
       const actions = [];
       if (invoice.status === 'Draft') {
         actions.push({
-          label: 'Issue', onClick: async (row, reload) => {
-            try { await api.post(`/invoices/${row.id}/issue`); toastSuccess('Invoice issued.'); reload(); }
-            catch (error) { toastError(error.message || 'Failed to issue invoice.'); }
+          label: t('invoices.issue'), onClick: async (row, reload) => {
+            try { await api.post(`/invoices/${row.id}/issue`); toastSuccess(t('invoices.invoiceIssued')); reload(); }
+            catch (error) { toastError(error.message || t('invoices.issueFailed')); }
           },
         });
       }
       if (invoice.status !== 'Paid' && invoice.status !== 'Void') {
         actions.push({
-          label: 'Void', className: 'btn-danger', onClick: async (row, reload) => {
-            try { await api.post(`/invoices/${row.id}/void`); toastSuccess('Invoice voided.'); reload(); }
-            catch (error) { toastError(error.message || 'Failed to void invoice.'); }
+          label: t('invoices.void'), className: 'btn-danger', onClick: async (row, reload) => {
+            try { await api.post(`/invoices/${row.id}/void`); toastSuccess(t('invoices.invoiceVoided')); reload(); }
+            catch (error) { toastError(error.message || t('invoices.voidFailed')); }
           },
         });
       }
