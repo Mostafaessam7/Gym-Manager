@@ -9,7 +9,8 @@ using GymManager.SharedKernel.Results;
 namespace GymManager.Application.Members.UploadMemberDocument;
 
 public sealed class UploadMemberDocumentCommandHandler(
-    IMemberRepository memberRepository, ICurrentUserService currentUserService, IUnitOfWork unitOfWork)
+    IMemberRepository memberRepository, ICurrentUserService currentUserService, IUnitOfWork unitOfWork,
+    IBranchAccessGuard branchAccessGuard)
     : ICommandHandler<UploadMemberDocumentCommand, Result<MemberDocumentResponse>>
 {
     public async Task<Result<MemberDocumentResponse>> Handle(UploadMemberDocumentCommand command, CancellationToken cancellationToken)
@@ -17,6 +18,10 @@ public sealed class UploadMemberDocumentCommandHandler(
         var member = await memberRepository.GetByIdAsync(command.MemberId, cancellationToken);
         if (member is null)
             return Result.Failure<MemberDocumentResponse>(MemberErrors.NotFound);
+
+        var accessResult = branchAccessGuard.EnsureCanAccess(member.BranchId);
+        if (accessResult.IsFailure)
+            return Result.Failure<MemberDocumentResponse>(accessResult.Error);
 
         var document = member.AddDocument(command.FileName, command.FileUrl, command.DocumentType, currentUserService.Email);
 

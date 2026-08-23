@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign in · Gym Manager</title>
+  <link rel="icon" type="image/svg+xml" href="Mecodex-Brand-Assets/SVG/mecodex-favicon.svg" />
+  <link rel="alternate icon" href="Mecodex-Brand-Assets/Favicon-ICO/favicon.ico" />
   <script>
     // Applied synchronously, before the stylesheets paint, so a user who picked dark/light mode or a
     // language on the dashboard doesn't see the login page flash back to the OS/English default —
@@ -69,6 +71,12 @@
       align-items: center;
       justify-content: center;
       font-weight: 800;
+    }
+
+    .login-brand-mark img {
+      width: 70%;
+      height: 70%;
+      object-fit: contain;
     }
 
     .login-brand-name {
@@ -138,7 +146,9 @@
     </div>
     <div class="login-card">
       <div class="login-brand">
-        <div class="login-brand-mark">GM</div>
+        <div class="login-brand-mark">
+          <img src="Mecodex-Brand-Assets/SVG/mecodex-icon.svg" alt="Gym Manager" />
+        </div>
         <div class="login-brand-name">Gym Manager</div>
       </div>
 

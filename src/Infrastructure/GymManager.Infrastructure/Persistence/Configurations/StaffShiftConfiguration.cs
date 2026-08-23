@@ -1,3 +1,5 @@
+using GymManager.Domain.Branches;
+using GymManager.Domain.Identity;
 using GymManager.Domain.Staff;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -21,6 +23,11 @@ internal sealed class StaffShiftConfiguration : IEntityTypeConfiguration<StaffSh
 
         builder.HasIndex(s => new { s.UserId, s.StartUtc });
         builder.HasIndex(s => s.BranchId);
+
+        // Shadow (no-navigation) FKs — see LeadConfiguration for the rationale (Restrict, no domain
+        // navigation added; neither User nor Branch is ever hard-deleted by this application).
+        builder.HasOne<User>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Branch>().WithMany().HasForeignKey(s => s.BranchId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(s => s.RowVersion).IsRowVersion();
     }

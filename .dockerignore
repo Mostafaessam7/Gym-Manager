@@ -1,0 +1,17 @@
+# Without this file, `docker compose build` sends the entire repo — including every local `bin/`/`obj/`
+# directory from whatever machine ran a `dotnet build`/`dotnet test` outside the container — as the build
+# context. The Dockerfile's own `COPY src/ src/` then overwrites the container's freshly-restored (Linux)
+# `obj/` output with those host `obj/` files, which bake in host-specific paths (e.g. a Windows machine's
+# NuGet fallback folder under `C:\Program Files (x86)\...`). `dotnet publish --no-restore` then fails inside
+# the container trying to resolve a Windows path that doesn't exist on Linux. Found by actually running
+# `docker compose up --build` for the first time — see PROJECT_STATUS.md.
+**/bin/
+**/obj/
+.vs/
+.vscode/
+.git/
+.github/
+.claude/
+node_modules/
+*.user
+logs/

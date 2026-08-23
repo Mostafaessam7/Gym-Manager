@@ -1,3 +1,4 @@
+using GymManager.Domain.Identity;
 using GymManager.Domain.Staff;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -28,6 +29,10 @@ internal sealed class CommissionConfiguration : IEntityTypeConfiguration<Commiss
         builder.Navigation(c => c.Amount).IsRequired();
 
         builder.HasIndex(c => new { c.UserId, c.Status });
+
+        // Shadow (no-navigation) FK — see LeadConfiguration for the rationale (Restrict, no domain
+        // navigation added; User is never hard-deleted by this application).
+        builder.HasOne<User>().WithMany().HasForeignKey(c => c.UserId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(c => c.RowVersion).IsRowVersion();
     }

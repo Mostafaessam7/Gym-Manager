@@ -157,4 +157,232 @@
   <data name="Attendance.NoOpenSession" xml:space="preserve">
     <value>لا توجد جلسة حضور مفتوحة لهذا العضو.</value>
   </data>
+  <data name="Attendance.AlreadyCheckedOut" xml:space="preserve">
+    <value>تم تسجيل انصراف هذا السجل بالفعل.</value>
+  </data>
+  <data name="Attendance.InvalidCheckInCode" xml:space="preserve">
+    <value>لا يوجد عضو مطابق لكود تسجيل الحضور هذا.</value>
+  </data>
+  <data name="Attendance.MemberNotActive" xml:space="preserve">
+    <value>حساب هذا العضو مجمّد أو غير نشط.</value>
+  </data>
+  <data name="Attendance.MembershipNotActive" xml:space="preserve">
+    <value>لا يوجد لدى هذا العضو اشتراك نشط.</value>
+  </data>
+  <data name="Attendance.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على سجل الحضور.</value>
+  </data>
+  <data name="BodyMeasurement.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على سجل القياس.</value>
+  </data>
+  <data name="Branch.AlreadyInactive" xml:space="preserve">
+    <value>هذا الفرع معطّل بالفعل.</value>
+  </data>
+  <data name="ClassSession.AlreadyCancelled" xml:space="preserve">
+    <value>تم إلغاء هذه الجلسة بالفعل.</value>
+  </data>
+  <data name="ClassSession.BookingNotFound" xml:space="preserve">
+    <value>لم يتم العثور على حجز نشط لهذا العضو.</value>
+  </data>
+  <data name="ClassSession.EndBeforeStart" xml:space="preserve">
+    <value>يجب أن يكون وقت انتهاء الجلسة بعد وقت بدايتها.</value>
+  </data>
+  <data name="ClassSession.MemberNotActive" xml:space="preserve">
+    <value>حساب هذا العضو مجمّد أو غير نشط.</value>
+  </data>
+  <data name="ClassSession.MembershipNotActive" xml:space="preserve">
+    <value>لا يوجد لدى هذا العضو اشتراك نشط.</value>
+  </data>
+  <data name="ClassSession.NotScheduled" xml:space="preserve">
+    <value>هذه الجلسة غير متاحة للحجز.</value>
+  </data>
+  <data name="ClassSession.TrainerOverlap" xml:space="preserve">
+    <value>لدى هذا المدرب جلسة مجدولة بالفعل في هذا التوقيت.</value>
+  </data>
+  <data name="Email.Empty" xml:space="preserve">
+    <value>البريد الإلكتروني مطلوب.</value>
+  </data>
+  <data name="Email.Invalid" xml:space="preserve">
+    <value>صيغة البريد الإلكتروني غير صحيحة.</value>
+  </data>
+  <data name="Expense.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على المصروف.</value>
+  </data>
+  <data name="File.Empty" xml:space="preserve">
+    <value>الملف الذي تم رفعه فارغ.</value>
+  </data>
+  <data name="File.TooLarge" xml:space="preserve">
+    <value>حجم الملف الذي تم رفعه يتجاوز الحد الأقصى 5 ميجابايت.</value>
+  </data>
+  <data name="GiftCard.CodeAlreadyInUse" xml:space="preserve">
+    <value>توجد بالفعل بطاقة هدية بهذا الكود.</value>
+  </data>
+  <data name="GiftCard.Expired" xml:space="preserve">
+    <value>انتهت صلاحية بطاقة الهدية هذه.</value>
+  </data>
+  <data name="GiftCard.Inactive" xml:space="preserve">
+    <value>تم تعطيل بطاقة الهدية هذه.</value>
+  </data>
+  <data name="GiftCard.InsufficientBalance" xml:space="preserve">
+    <value>لا يوجد رصيد كافٍ في بطاقة الهدية هذه.</value>
+  </data>
+  <data name="GiftCard.InvalidAmount" xml:space="preserve">
+    <value>يجب أن يكون المبلغ أكبر من صفر.</value>
+  </data>
+  <data name="GiftCard.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على بطاقة الهدية.</value>
+  </data>
+  <data name="GymClass.NameAlreadyInUse" xml:space="preserve">
+    <value>توجد بالفعل حصة بهذا الاسم.</value>
+  </data>
+  <data name="Invoice.NoLines" xml:space="preserve">
+    <value>يجب أن تحتوي الفاتورة على بند واحد على الأقل.</value>
+  </data>
+  <data name="Invoice.NotIssued" xml:space="preserve">
+    <value>يمكن فقط تحديد فاتورة صادرة كمدفوعة.</value>
+  </data>
+  <data name="Lead.AlreadyConverted" xml:space="preserve">
+    <value>تم تحويل هذا العميل المحتمل إلى عضو بالفعل.</value>
+  </data>
+  <data name="Lead.FollowUpNotFound" xml:space="preserve">
+    <value>لم يتم العثور على هذه المتابعة لدى هذا العميل المحتمل.</value>
+  </data>
+  <data name="Lead.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على العميل المحتمل.</value>
+  </data>
+  <data name="Locker.NotAssigned" xml:space="preserve">
+    <value>هذه الخزانة غير مُعيّنة حاليًا لأي شخص.</value>
+  </data>
+  <data name="Locker.NumberAlreadyInUse" xml:space="preserve">
+    <value>توجد بالفعل خزانة بهذا الرقم في هذا الفرع.</value>
+  </data>
+  <data name="Member.DocumentNotFound" xml:space="preserve">
+    <value>لم يتم العثور على المستند.</value>
+  </data>
+  <data name="Membership.AlreadyCancelled" xml:space="preserve">
+    <value>تم إلغاء هذا الاشتراك بالفعل.</value>
+  </data>
+  <data name="Membership.NotFrozen" xml:space="preserve">
+    <value>هذا الاشتراك غير مجمّد حاليًا.</value>
+  </data>
+  <data name="MembershipPlan.NameAlreadyInUse" xml:space="preserve">
+    <value>توجد بالفعل خطة اشتراك بهذا الاسم.</value>
+  </data>
+  <data name="Money.Negative" xml:space="preserve">
+    <value>لا يمكن أن يكون المبلغ سالبًا.</value>
+  </data>
+  <data name="Notification.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الإشعار.</value>
+  </data>
+  <data name="Notification.NotPending" xml:space="preserve">
+    <value>يمكن فقط تحديد إشعار قيد الانتظار كمُرسل أو فاشل.</value>
+  </data>
+  <data name="Nutrition.LogNotFound" xml:space="preserve">
+    <value>لم يتم العثور على سجل التغذية.</value>
+  </data>
+  <data name="Nutrition.MealNotFound" xml:space="preserve">
+    <value>لم يتم العثور على هذه الوجبة في هذه الخطة.</value>
+  </data>
+  <data name="Nutrition.PlanNotFound" xml:space="preserve">
+    <value>لم يتم العثور على خطة التغذية.</value>
+  </data>
+  <data name="Payment.GatewayRequestFailed" xml:space="preserve">
+    <value>رفضت بوابة الدفع هذا الطلب.</value>
+  </data>
+  <data name="Payment.NotCompleted" xml:space="preserve">
+    <value>يمكن فقط استرداد دفعة مكتملة.</value>
+  </data>
+  <data name="Payment.NotPending" xml:space="preserve">
+    <value>يمكن فقط إتمام أو فشل دفعة قيد الانتظار.</value>
+  </data>
+  <data name="Payment.WebhookSignatureInvalid" xml:space="preserve">
+    <value>تعذّر التحقق من توقيع الـ webhook.</value>
+  </data>
+  <data name="PhoneNumber.Invalid" xml:space="preserve">
+    <value>صيغة رقم الهاتف غير صحيحة.</value>
+  </data>
+  <data name="Product.InvalidQuantity" xml:space="preserve">
+    <value>يجب أن تكون الكمية رقمًا موجبًا.</value>
+  </data>
+  <data name="Product.SkuAlreadyInUse" xml:space="preserve">
+    <value>يوجد بالفعل منتج بهذا الرمز (SKU).</value>
+  </data>
+  <data name="Role.NameAlreadyInUse" xml:space="preserve">
+    <value>يوجد بالفعل دور بهذا الاسم.</value>
+  </data>
+  <data name="Role.SystemRoleImmutable" xml:space="preserve">
+    <value>لا يمكن تعديل أو حذف الأدوار النظامية المدمجة.</value>
+  </data>
+  <data name="Sale.AlreadyRefunded" xml:space="preserve">
+    <value>تم استرداد هذه العملية بالفعل.</value>
+  </data>
+  <data name="Sale.LineNotFound" xml:space="preserve">
+    <value>لم يتم العثور على بند البيع.</value>
+  </data>
+  <data name="Sale.NoLines" xml:space="preserve">
+    <value>يجب أن تحتوي عملية البيع على بند واحد على الأقل.</value>
+  </data>
+  <data name="Sale.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على عملية البيع.</value>
+  </data>
+  <data name="Setting.KeyAlreadyInUse" xml:space="preserve">
+    <value>يوجد بالفعل إعداد بهذا المفتاح.</value>
+  </data>
+  <data name="Setting.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الإعداد.</value>
+  </data>
+  <data name="Staff.CommissionAlreadyPaid" xml:space="preserve">
+    <value>تم دفع هذه العمولة بالفعل.</value>
+  </data>
+  <data name="Staff.CommissionNotFound" xml:space="preserve">
+    <value>لم يتم العثور على سجل العمولة.</value>
+  </data>
+  <data name="Staff.LeaveRequestNotFound" xml:space="preserve">
+    <value>لم يتم العثور على طلب الإجازة.</value>
+  </data>
+  <data name="Staff.ShiftNotFound" xml:space="preserve">
+    <value>لم يتم العثور على المناوبة.</value>
+  </data>
+  <data name="Trainer.EmailAlreadyInUse" xml:space="preserve">
+    <value>هذا البريد الإلكتروني مسجّل بالفعل لمدرب آخر.</value>
+  </data>
+  <data name="Trainer.SlotNotFound" xml:space="preserve">
+    <value>لم يتم العثور على فترة التوفر.</value>
+  </data>
+  <data name="Trainer.SlotOverlaps" xml:space="preserve">
+    <value>تتداخل فترة التوفر هذه مع فترة موجودة بالفعل.</value>
+  </data>
+  <data name="User.AlreadyInRole" xml:space="preserve">
+    <value>هذا المستخدم لديه هذا الدور بالفعل.</value>
+  </data>
+  <data name="User.EmailAlreadyVerified" xml:space="preserve">
+    <value>تم توثيق هذا البريد الإلكتروني بالفعل.</value>
+  </data>
+  <data name="User.NotInRole" xml:space="preserve">
+    <value>هذا المستخدم ليس لديه هذا الدور.</value>
+  </data>
+  <data name="User.PasswordResetTokenInvalid" xml:space="preserve">
+    <value>رابط إعادة تعيين كلمة المرور غير صالح أو منتهي الصلاحية.</value>
+  </data>
+  <data name="User.RefreshTokenInvalid" xml:space="preserve">
+    <value>رمز التحديث غير صالح أو منتهي الصلاحية.</value>
+  </data>
+  <data name="User.TwoFactorAlreadyEnabled" xml:space="preserve">
+    <value>التحقق بخطوتين مُفعّل بالفعل.</value>
+  </data>
+  <data name="User.TwoFactorCodeInvalid" xml:space="preserve">
+    <value>رمز التحقق بخطوتين غير صحيح.</value>
+  </data>
+  <data name="User.TwoFactorNotEnabled" xml:space="preserve">
+    <value>التحقق بخطوتين غير مُفعّل.</value>
+  </data>
+  <data name="Workout.ExerciseNotFound" xml:space="preserve">
+    <value>لم يتم العثور على هذا التمرين في هذه الخطة.</value>
+  </data>
+  <data name="Workout.LogNotFound" xml:space="preserve">
+    <value>لم يتم العثور على سجل التمرين.</value>
+  </data>
+  <data name="Workout.PlanNotFound" xml:space="preserve">
+    <value>لم يتم العثور على خطة التمرين.</value>
+  </data>
 </root>

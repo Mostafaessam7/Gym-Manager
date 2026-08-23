@@ -157,4 +157,232 @@
   <data name="Attendance.NoOpenSession" xml:space="preserve">
     <value>This member has no open check-in session.</value>
   </data>
+  <data name="Attendance.AlreadyCheckedOut" xml:space="preserve">
+    <value>This attendance record is already checked out.</value>
+  </data>
+  <data name="Attendance.InvalidCheckInCode" xml:space="preserve">
+    <value>No member matches this check-in code.</value>
+  </data>
+  <data name="Attendance.MemberNotActive" xml:space="preserve">
+    <value>This member's account is frozen or inactive.</value>
+  </data>
+  <data name="Attendance.MembershipNotActive" xml:space="preserve">
+    <value>This member does not have an active membership.</value>
+  </data>
+  <data name="Attendance.NotFound" xml:space="preserve">
+    <value>The attendance record was not found.</value>
+  </data>
+  <data name="BodyMeasurement.NotFound" xml:space="preserve">
+    <value>The measurement record was not found.</value>
+  </data>
+  <data name="Branch.AlreadyInactive" xml:space="preserve">
+    <value>The branch is already inactive.</value>
+  </data>
+  <data name="ClassSession.AlreadyCancelled" xml:space="preserve">
+    <value>This session has already been cancelled.</value>
+  </data>
+  <data name="ClassSession.BookingNotFound" xml:space="preserve">
+    <value>No active booking was found for this member.</value>
+  </data>
+  <data name="ClassSession.EndBeforeStart" xml:space="preserve">
+    <value>The session end time must be after its start time.</value>
+  </data>
+  <data name="ClassSession.MemberNotActive" xml:space="preserve">
+    <value>This member's account is frozen or inactive.</value>
+  </data>
+  <data name="ClassSession.MembershipNotActive" xml:space="preserve">
+    <value>This member does not have an active membership.</value>
+  </data>
+  <data name="ClassSession.NotScheduled" xml:space="preserve">
+    <value>This session is not open for booking.</value>
+  </data>
+  <data name="ClassSession.TrainerOverlap" xml:space="preserve">
+    <value>This trainer already has a session scheduled during this time.</value>
+  </data>
+  <data name="Email.Empty" xml:space="preserve">
+    <value>Email address is required.</value>
+  </data>
+  <data name="Email.Invalid" xml:space="preserve">
+    <value>Email address is not a valid format.</value>
+  </data>
+  <data name="Expense.NotFound" xml:space="preserve">
+    <value>The expense was not found.</value>
+  </data>
+  <data name="File.Empty" xml:space="preserve">
+    <value>The uploaded file is empty.</value>
+  </data>
+  <data name="File.TooLarge" xml:space="preserve">
+    <value>The uploaded file exceeds the 5 MB limit.</value>
+  </data>
+  <data name="GiftCard.CodeAlreadyInUse" xml:space="preserve">
+    <value>A gift card with this code already exists.</value>
+  </data>
+  <data name="GiftCard.Expired" xml:space="preserve">
+    <value>This gift card has expired.</value>
+  </data>
+  <data name="GiftCard.Inactive" xml:space="preserve">
+    <value>This gift card has been deactivated.</value>
+  </data>
+  <data name="GiftCard.InsufficientBalance" xml:space="preserve">
+    <value>The gift card does not have enough remaining balance.</value>
+  </data>
+  <data name="GiftCard.InvalidAmount" xml:space="preserve">
+    <value>The amount must be greater than zero.</value>
+  </data>
+  <data name="GiftCard.NotFound" xml:space="preserve">
+    <value>The gift card was not found.</value>
+  </data>
+  <data name="GymClass.NameAlreadyInUse" xml:space="preserve">
+    <value>A class with that name already exists.</value>
+  </data>
+  <data name="Invoice.NoLines" xml:space="preserve">
+    <value>An invoice must have at least one line.</value>
+  </data>
+  <data name="Invoice.NotIssued" xml:space="preserve">
+    <value>Only an issued invoice can be marked as paid.</value>
+  </data>
+  <data name="Lead.AlreadyConverted" xml:space="preserve">
+    <value>This lead has already been converted to a member.</value>
+  </data>
+  <data name="Lead.FollowUpNotFound" xml:space="preserve">
+    <value>The follow-up was not found on this lead.</value>
+  </data>
+  <data name="Lead.NotFound" xml:space="preserve">
+    <value>The lead was not found.</value>
+  </data>
+  <data name="Locker.NotAssigned" xml:space="preserve">
+    <value>This locker is not currently assigned to anyone.</value>
+  </data>
+  <data name="Locker.NumberAlreadyInUse" xml:space="preserve">
+    <value>A locker with that number already exists at this branch.</value>
+  </data>
+  <data name="Member.DocumentNotFound" xml:space="preserve">
+    <value>The document was not found.</value>
+  </data>
+  <data name="Membership.AlreadyCancelled" xml:space="preserve">
+    <value>This membership has already been cancelled.</value>
+  </data>
+  <data name="Membership.NotFrozen" xml:space="preserve">
+    <value>This membership is not currently frozen.</value>
+  </data>
+  <data name="MembershipPlan.NameAlreadyInUse" xml:space="preserve">
+    <value>A membership plan with that name already exists.</value>
+  </data>
+  <data name="Money.Negative" xml:space="preserve">
+    <value>Amount cannot be negative.</value>
+  </data>
+  <data name="Notification.NotFound" xml:space="preserve">
+    <value>The notification was not found.</value>
+  </data>
+  <data name="Notification.NotPending" xml:space="preserve">
+    <value>Only a pending notification can be marked sent or failed.</value>
+  </data>
+  <data name="Nutrition.LogNotFound" xml:space="preserve">
+    <value>The nutrition log was not found.</value>
+  </data>
+  <data name="Nutrition.MealNotFound" xml:space="preserve">
+    <value>The meal was not found on this plan.</value>
+  </data>
+  <data name="Nutrition.PlanNotFound" xml:space="preserve">
+    <value>The nutrition plan was not found.</value>
+  </data>
+  <data name="Payment.GatewayRequestFailed" xml:space="preserve">
+    <value>The payment gateway rejected the request.</value>
+  </data>
+  <data name="Payment.NotCompleted" xml:space="preserve">
+    <value>Only a completed payment can be refunded.</value>
+  </data>
+  <data name="Payment.NotPending" xml:space="preserve">
+    <value>Only a pending payment can be completed or failed.</value>
+  </data>
+  <data name="Payment.WebhookSignatureInvalid" xml:space="preserve">
+    <value>The webhook signature could not be verified.</value>
+  </data>
+  <data name="PhoneNumber.Invalid" xml:space="preserve">
+    <value>Phone number is not a valid format.</value>
+  </data>
+  <data name="Product.InvalidQuantity" xml:space="preserve">
+    <value>Quantity must be a positive number.</value>
+  </data>
+  <data name="Product.SkuAlreadyInUse" xml:space="preserve">
+    <value>A product with that SKU already exists.</value>
+  </data>
+  <data name="Role.NameAlreadyInUse" xml:space="preserve">
+    <value>A role with that name already exists.</value>
+  </data>
+  <data name="Role.SystemRoleImmutable" xml:space="preserve">
+    <value>Built-in system roles cannot be modified or deleted.</value>
+  </data>
+  <data name="Sale.AlreadyRefunded" xml:space="preserve">
+    <value>This sale has already been refunded.</value>
+  </data>
+  <data name="Sale.LineNotFound" xml:space="preserve">
+    <value>The sale line was not found.</value>
+  </data>
+  <data name="Sale.NoLines" xml:space="preserve">
+    <value>A sale must have at least one line.</value>
+  </data>
+  <data name="Sale.NotFound" xml:space="preserve">
+    <value>The sale was not found.</value>
+  </data>
+  <data name="Setting.KeyAlreadyInUse" xml:space="preserve">
+    <value>A setting with that key already exists.</value>
+  </data>
+  <data name="Setting.NotFound" xml:space="preserve">
+    <value>The setting was not found.</value>
+  </data>
+  <data name="Staff.CommissionAlreadyPaid" xml:space="preserve">
+    <value>This commission has already been paid.</value>
+  </data>
+  <data name="Staff.CommissionNotFound" xml:space="preserve">
+    <value>The commission record was not found.</value>
+  </data>
+  <data name="Staff.LeaveRequestNotFound" xml:space="preserve">
+    <value>The leave request was not found.</value>
+  </data>
+  <data name="Staff.ShiftNotFound" xml:space="preserve">
+    <value>The shift was not found.</value>
+  </data>
+  <data name="Trainer.EmailAlreadyInUse" xml:space="preserve">
+    <value>That email is already registered to another trainer.</value>
+  </data>
+  <data name="Trainer.SlotNotFound" xml:space="preserve">
+    <value>The availability slot was not found.</value>
+  </data>
+  <data name="Trainer.SlotOverlaps" xml:space="preserve">
+    <value>This availability slot overlaps with an existing one.</value>
+  </data>
+  <data name="User.AlreadyInRole" xml:space="preserve">
+    <value>The user already has this role.</value>
+  </data>
+  <data name="User.EmailAlreadyVerified" xml:space="preserve">
+    <value>This email address has already been verified.</value>
+  </data>
+  <data name="User.NotInRole" xml:space="preserve">
+    <value>The user does not have this role.</value>
+  </data>
+  <data name="User.PasswordResetTokenInvalid" xml:space="preserve">
+    <value>The password reset link is invalid or has expired.</value>
+  </data>
+  <data name="User.RefreshTokenInvalid" xml:space="preserve">
+    <value>The refresh token is invalid or has expired.</value>
+  </data>
+  <data name="User.TwoFactorAlreadyEnabled" xml:space="preserve">
+    <value>Two-factor authentication is already enabled.</value>
+  </data>
+  <data name="User.TwoFactorCodeInvalid" xml:space="preserve">
+    <value>The two-factor authentication code is invalid.</value>
+  </data>
+  <data name="User.TwoFactorNotEnabled" xml:space="preserve">
+    <value>Two-factor authentication is not enabled.</value>
+  </data>
+  <data name="Workout.ExerciseNotFound" xml:space="preserve">
+    <value>The exercise was not found on this plan.</value>
+  </data>
+  <data name="Workout.LogNotFound" xml:space="preserve">
+    <value>The workout log was not found.</value>
+  </data>
+  <data name="Workout.PlanNotFound" xml:space="preserve">
+    <value>The workout plan was not found.</value>
+  </data>
 </root>

@@ -1,6 +1,7 @@
 using System.Text;
 using Asp.Versioning;
 using GymManager.Api.Authorization;
+using GymManager.Api.Configuration;
 using GymManager.Infrastructure.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -79,6 +80,12 @@ public static class ServiceCollectionExtensions
             options.CustomSchemaIds(type => type.DeclaringType is not null
                 ? $"{type.DeclaringType.Name}.{type.Name}"
                 : type.Name);
+
+            // Documents the 401/403/404/400 responses every endpoint can realistically return — none of the
+            // 34 controllers carried any `[ProducesResponseType]` before this, so the generated OpenAPI
+            // document only ever showed a single 200 response. See the filter's own doc comment for why this
+            // hand-written filter is used instead of ASP.NET Core's built-in API conventions.
+            options.OperationFilter<ConventionalResponsesOperationFilter>();
 
             options.SwaggerDoc("v1", new OpenApiInfo
             {

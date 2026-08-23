@@ -138,4 +138,120 @@ public sealed class BranchIsolationTests(CustomWebApplicationFactory factory) : 
 
         Assert.Equal(HttpStatusCode.NoContent, freezeResponse.StatusCode);
     }
+
+    // The four regression tests below cover a gap found during a later frontend-coverage review: several
+    // handlers added after the original branch-isolation sweep (member medical info/documents/timeline,
+    // body measurements) never called IBranchAccessGuard at all — a branch-scoped caller could read or
+    // write another branch's member medical data purely by knowing the member's id. Fixed alongside these
+    // tests; see PROJECT_STATUS.md's "Backend gap remediation" section for the full list of affected handlers.
+
+    [Fact]
+    public async Task UpdateMedicalInfo_For_Another_Branchs_Member_Should_Return_Forbidden()
+    {
+        var hqClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, Permissions.Branches.Manage, Permissions.Members.Create);
+
+        var otherBranchId = await CreateBranchAsync(hqClient);
+        var memberResponse = await hqClient.PostAsJsonAsync("/api/v1/members", MemberRequest(otherBranchId));
+        var member = await memberResponse.Content.ReadFromJsonAsync<MemberResponse>();
+
+        var scopedClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, branchId: Guid.NewGuid(), Permissions.Members.Update);
+
+        var response = await scopedClient.PutAsJsonAsync($"/api/v1/members/{member!.Id}/medical-info", new
+        {
+            bloodType = "O+",
+            conditions = (string?)null,
+            allergies = (string?)null,
+            medications = (string?)null,
+            notes = (string?)null,
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMemberTimeline_For_Another_Branchs_Member_Should_Return_Forbidden()
+    {
+        var hqClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, Permissions.Branches.Manage, Permissions.Members.Create);
+
+        var otherBranchId = await CreateBranchAsync(hqClient);
+        var memberResponse = await hqClient.PostAsJsonAsync("/api/v1/members", MemberRequest(otherBranchId));
+        var member = await memberResponse.Content.ReadFromJsonAsync<MemberResponse>();
+
+        var scopedClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, branchId: Guid.NewGuid(), Permissions.Members.View);
+
+        var response = await scopedClient.GetAsync($"/api/v1/members/{member!.Id}/timeline");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RecordBodyMeasurement_For_Another_Branchs_Member_Should_Return_Forbidden()
+    {
+        var hqClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, Permissions.Branches.Manage, Permissions.Members.Create);
+
+        var otherBranchId = await CreateBranchAsync(hqClient);
+        var memberResponse = await hqClient.PostAsJsonAsync("/api/v1/members", MemberRequest(otherBranchId));
+        var member = await memberResponse.Content.ReadFromJsonAsync<MemberResponse>();
+
+        var scopedClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, branchId: Guid.NewGuid(), Permissions.Members.Update);
+
+        var response = await scopedClient.PostAsJsonAsync("/api/v1/body-measurements", new
+        {
+            memberId = member!.Id,
+            recordedOnUtc = DateTimeOffset.UtcNow,
+            heightCm = 180m,
+            weightKg = 80m,
+            bodyFatPercentage = (decimal?)null,
+            chestCm = (decimal?)null,
+            waistCm = (decimal?)null,
+            hipsCm = (decimal?)null,
+            armCm = (decimal?)null,
+            thighCm = (decimal?)null,
+            notes = (string?)null,
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetBodyMeasurements_For_Another_Branchs_Member_Should_Return_Empty_Page()
+    {
+        var hqClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, Permissions.Branches.Manage, Permissions.Members.Create, Permissions.Members.Update);
+
+        var otherBranchId = await CreateBranchAsync(hqClient);
+        var memberResponse = await hqClient.PostAsJsonAsync("/api/v1/members", MemberRequest(otherBranchId));
+        var member = await memberResponse.Content.ReadFromJsonAsync<MemberResponse>();
+
+        var recordResponse = await hqClient.PostAsJsonAsync("/api/v1/body-measurements", new
+        {
+            memberId = member!.Id,
+            recordedOnUtc = DateTimeOffset.UtcNow,
+            heightCm = 180m,
+            weightKg = 80m,
+            bodyFatPercentage = (decimal?)null,
+            chestCm = (decimal?)null,
+            waistCm = (decimal?)null,
+            hipsCm = (decimal?)null,
+            armCm = (decimal?)null,
+            thighCm = (decimal?)null,
+            notes = (string?)null,
+        });
+        recordResponse.EnsureSuccessStatusCode();
+
+        var scopedClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, branchId: Guid.NewGuid(), Permissions.Members.View);
+
+        var response = await scopedClient.GetAsync($"/api/v1/body-measurements?memberId={member.Id}");
+        response.EnsureSuccessStatusCode();
+
+        var page = await response.Content.ReadFromJsonAsync<PagedMembers>();
+        Assert.Empty(page!.Items);
+    }
 }

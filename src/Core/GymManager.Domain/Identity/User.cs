@@ -203,7 +203,7 @@ public sealed class User : AggregateRoot<Guid>, IAuditableEntity, ISoftDeletable
         if (PasswordResetTokenExpiresOnUtc.Value <= utcNow)
             return Result.Failure(UserErrors.PasswordResetTokenInvalid);
 
-        if (!string.Equals(PasswordResetTokenHash, tokenHash, StringComparison.Ordinal))
+        if (!ConstantTimeComparer.Equals(PasswordResetTokenHash, tokenHash))
             return Result.Failure(UserErrors.PasswordResetTokenInvalid);
 
         ChangePassword(newPasswordHash, utcNow);
@@ -312,7 +312,7 @@ public sealed class User : AggregateRoot<Guid>, IAuditableEntity, ISoftDeletable
         if (EmailVerificationTokenExpiresOnUtc.Value <= utcNow)
             return Result.Failure(UserErrors.EmailVerificationTokenInvalid);
 
-        if (!string.Equals(EmailVerificationTokenHash, tokenHash, StringComparison.Ordinal))
+        if (!ConstantTimeComparer.Equals(EmailVerificationTokenHash, tokenHash))
             return Result.Failure(UserErrors.EmailVerificationTokenInvalid);
 
         IsEmailVerified = true;
@@ -390,7 +390,7 @@ public sealed class User : AggregateRoot<Guid>, IAuditableEntity, ISoftDeletable
         if (hash is null || expiry is null || expiry.Value <= utcNow)
             return Result.Failure(UserErrors.TwoFactorChallengeRequired);
 
-        if (!string.Equals(hash, challengeTokenHash, StringComparison.Ordinal))
+        if (!ConstantTimeComparer.Equals(hash, challengeTokenHash))
             return Result.Failure(UserErrors.TwoFactorChallengeRequired);
 
         return Result.Success();
@@ -400,7 +400,7 @@ public sealed class User : AggregateRoot<Guid>, IAuditableEntity, ISoftDeletable
     /// has lost their authenticator device.</summary>
     public Result ConsumeTwoFactorRecoveryCode(string codeHash)
     {
-        var recoveryCode = _twoFactorRecoveryCodes.FirstOrDefault(c => c.CodeHash == codeHash && !c.IsUsed);
+        var recoveryCode = _twoFactorRecoveryCodes.FirstOrDefault(c => !c.IsUsed && ConstantTimeComparer.Equals(c.CodeHash, codeHash));
         if (recoveryCode is null)
             return Result.Failure(UserErrors.TwoFactorCodeInvalid);
 

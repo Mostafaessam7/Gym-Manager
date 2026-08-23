@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using GymManager.Application.Abstractions;
+using GymManager.SharedKernel.Primitives;
 
 namespace GymManager.Infrastructure.Authentication;
 
@@ -38,7 +39,7 @@ public sealed class TotpTwoFactorService(string issuer) : ITwoFactorService
         for (var drift = -AllowedDriftSteps; drift <= AllowedDriftSteps; drift++)
         {
             var candidate = ComputeCode(secretBytes, currentStep + drift);
-            if (CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(candidate), Encoding.ASCII.GetBytes(code)))
+            if (ConstantTimeComparer.Equals(candidate, code))
                 return true;
         }
 

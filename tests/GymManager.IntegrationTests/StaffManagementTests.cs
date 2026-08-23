@@ -33,15 +33,35 @@ public sealed class StaffManagementTests(CustomWebApplicationFactory factory) : 
 
     private sealed record PagedUsers(IReadOnlyList<UserSummary> Items);
 
+    private sealed record BranchSummary(Guid Id);
+
+    // StaffShifts.BranchId now carries a real DB-level foreign key (see LeadStaffCommissionForeignKeys
+    // migration), so scheduling a shift against a branch id that doesn't exist correctly fails validation
+    // instead of either silently succeeding (pre-FK) or throwing an unhandled DbUpdateException — the tests
+    // below need a real, persisted branch rather than a bare Guid.NewGuid().
+    private async Task<Guid> CreateBranchIdAsync(HttpClient client)
+    {
+        var response = await client.PostAsJsonAsync("/api/v1/branches", new
+        {
+            name = $"Branch-{Guid.NewGuid():N}", country = "USA", street = (string?)null, city = (string?)null,
+            state = (string?)null, postalCode = (string?)null, phoneNumber = (string?)null, email = (string?)null,
+        });
+        response.EnsureSuccessStatusCode();
+        var branch = await response.Content.ReadFromJsonAsync<BranchSummary>();
+        return branch!.Id;
+    }
+
     [Fact]
     public async Task ScheduleShift_Should_Return_A_Scheduled_Shift()
     {
-        var client = await TestAuthHelper.CreateAuthorizedClientAsync(factory, Permissions.Staff.Manage, Permissions.Users.View);
+        var client = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, Permissions.Staff.Manage, Permissions.Users.View, Permissions.Branches.Manage);
         var userId = await GetSeededUserIdAsync(client);
+        var branchId = await CreateBranchIdAsync(client);
 
         var response = await client.PostAsJsonAsync("/api/v1/staff-shifts", new
         {
-            userId, branchId = Guid.NewGuid(), startUtc = DateTimeOffset.UtcNow.AddDays(1),
+            userId, branchId, startUtc = DateTimeOffset.UtcNow.AddDays(1),
             endUtc = DateTimeOffset.UtcNow.AddDays(1).AddHours(8), notes = "Opening shift",
         });
 
@@ -53,13 +73,15 @@ public sealed class StaffManagementTests(CustomWebApplicationFactory factory) : 
     [Fact]
     public async Task ScheduleShift_With_End_Before_Start_Should_Return_BadRequest()
     {
-        var client = await TestAuthHelper.CreateAuthorizedClientAsync(factory, Permissions.Staff.Manage, Permissions.Users.View);
+        var client = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, Permissions.Staff.Manage, Permissions.Users.View, Permissions.Branches.Manage);
         var userId = await GetSeededUserIdAsync(client);
+        var branchId = await CreateBranchIdAsync(client);
         var start = DateTimeOffset.UtcNow.AddDays(1);
 
         var response = await client.PostAsJsonAsync("/api/v1/staff-shifts", new
         {
-            userId, branchId = Guid.NewGuid(), startUtc = start, endUtc = start.AddHours(-1), notes = (string?)null,
+            userId, branchId, startUtc = start, endUtc = start.AddHours(-1), notes = (string?)null,
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -68,12 +90,14 @@ public sealed class StaffManagementTests(CustomWebApplicationFactory factory) : 
     [Fact]
     public async Task CompleteShift_Then_CancelShift_Should_Fail_Since_Already_Finalized()
     {
-        var client = await TestAuthHelper.CreateAuthorizedClientAsync(factory, Permissions.Staff.Manage, Permissions.Users.View);
+        var client = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, Permissions.Staff.Manage, Permissions.Users.View, Permissions.Branches.Manage);
         var userId = await GetSeededUserIdAsync(client);
+        var branchId = await CreateBranchIdAsync(client);
 
         var shift = await (await client.PostAsJsonAsync("/api/v1/staff-shifts", new
         {
-            userId, branchId = Guid.NewGuid(), startUtc = DateTimeOffset.UtcNow.AddDays(1),
+            userId, branchId, startUtc = DateTimeOffset.UtcNow.AddDays(1),
             endUtc = DateTimeOffset.UtcNow.AddDays(1).AddHours(8), notes = (string?)null,
         })).Content.ReadFromJsonAsync<ShiftResponse>();
 
@@ -87,12 +111,14 @@ public sealed class StaffManagementTests(CustomWebApplicationFactory factory) : 
     [Fact]
     public async Task GetShifts_Filtered_By_User_Should_Only_Return_That_Users_Shifts()
     {
-        var client = await TestAuthHelper.CreateAuthorizedClientAsync(factory, Permissions.Staff.Manage, Permissions.Staff.View, Permissions.Users.View);
+        var client = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, Permissions.Staff.Manage, Permissions.Staff.View, Permissions.Users.View, Permissions.Branches.Manage);
         var userId = await GetSeededUserIdAsync(client);
+        var branchId = await CreateBranchIdAsync(client);
 
         await client.PostAsJsonAsync("/api/v1/staff-shifts", new
         {
-            userId, branchId = Guid.NewGuid(), startUtc = DateTimeOffset.UtcNow.AddDays(1),
+            userId, branchId, startUtc = DateTimeOffset.UtcNow.AddDays(1),
             endUtc = DateTimeOffset.UtcNow.AddDays(1).AddHours(8), notes = (string?)null,
         });
 

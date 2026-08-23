@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymManager.Application.Members.GetMemberTimeline;
 
-public sealed class GetMemberTimelineQueryHandler(IApplicationReadDb readDb)
+public sealed class GetMemberTimelineQueryHandler(IApplicationReadDb readDb, IBranchAccessGuard branchAccessGuard)
     : IQueryHandler<GetMemberTimelineQuery, Result<IReadOnlyCollection<MemberTimelineEntryResponse>>>
 {
     private const int MaxEntries = 200;
@@ -15,9 +15,13 @@ public sealed class GetMemberTimelineQueryHandler(IApplicationReadDb readDb)
     public async Task<Result<IReadOnlyCollection<MemberTimelineEntryResponse>>> Handle(
         GetMemberTimelineQuery query, CancellationToken cancellationToken)
     {
-        var memberExists = await readDb.Members.AnyAsync(m => m.Id == query.MemberId, cancellationToken);
-        if (!memberExists)
+        var member = await readDb.Members.FirstOrDefaultAsync(m => m.Id == query.MemberId, cancellationToken);
+        if (member is null)
             return Result.Failure<IReadOnlyCollection<MemberTimelineEntryResponse>>(MemberErrors.NotFound);
+
+        var accessResult = branchAccessGuard.EnsureCanAccess(member.BranchId);
+        if (accessResult.IsFailure)
+            return Result.Failure<IReadOnlyCollection<MemberTimelineEntryResponse>>(accessResult.Error);
 
         var checkIns = await readDb.AttendanceRecords
             .Where(a => a.MemberId == query.MemberId)

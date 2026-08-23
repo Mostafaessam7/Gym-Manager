@@ -1871,6 +1871,16 @@ namespace GymManager.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("GymManager.Domain.Crm.Lead", b =>
                 {
+                    b.HasOne("GymManager.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("AssignedToUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GymManager.Domain.Branches.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.OwnsMany("GymManager.Domain.Crm.LeadFollowUp", "FollowUps", b1 =>
                         {
                             b1.Property<Guid>("Id")
@@ -2858,6 +2868,12 @@ namespace GymManager.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("GymManager.Domain.Staff.Commission", b =>
                 {
+                    b.HasOne("GymManager.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.OwnsOne("GymManager.Domain.Common.Money", "Amount", b1 =>
                         {
                             b1.Property<Guid>("CommissionId")
@@ -2882,6 +2898,21 @@ namespace GymManager.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Amount")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("GymManager.Domain.Staff.StaffShift", b =>
+                {
+                    b.HasOne("GymManager.Domain.Branches.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GymManager.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

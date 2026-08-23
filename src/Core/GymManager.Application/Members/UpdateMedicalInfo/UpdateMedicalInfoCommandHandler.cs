@@ -1,3 +1,4 @@
+using GymManager.Application.Abstractions;
 using GymManager.Domain.Abstractions;
 using GymManager.Domain.Members;
 using GymManager.Domain.Members.Errors;
@@ -6,7 +7,8 @@ using GymManager.SharedKernel.Results;
 
 namespace GymManager.Application.Members.UpdateMedicalInfo;
 
-public sealed class UpdateMedicalInfoCommandHandler(IMemberRepository memberRepository, IUnitOfWork unitOfWork)
+public sealed class UpdateMedicalInfoCommandHandler(
+    IMemberRepository memberRepository, IUnitOfWork unitOfWork, IBranchAccessGuard branchAccessGuard)
     : ICommandHandler<UpdateMedicalInfoCommand>
 {
     public async Task<Result> Handle(UpdateMedicalInfoCommand command, CancellationToken cancellationToken)
@@ -14,6 +16,10 @@ public sealed class UpdateMedicalInfoCommandHandler(IMemberRepository memberRepo
         var member = await memberRepository.GetByIdAsync(command.MemberId, cancellationToken);
         if (member is null)
             return Result.Failure(MemberErrors.NotFound);
+
+        var accessResult = branchAccessGuard.EnsureCanAccess(member.BranchId);
+        if (accessResult.IsFailure)
+            return accessResult;
 
         var isEmpty =
             string.IsNullOrWhiteSpace(command.BloodType) &&

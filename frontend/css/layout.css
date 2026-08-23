@@ -41,6 +41,12 @@
   font-weight: 800;
 }
 
+.brand-mark-icon {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+}
+
 .sidebar__nav {
   flex: 1;
   padding: var(--spacing-2) var(--spacing-3);

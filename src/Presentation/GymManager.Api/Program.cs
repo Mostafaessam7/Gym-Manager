@@ -7,6 +7,7 @@ using GymManager.Infrastructure;
 using GymManager.Infrastructure.Persistence.Seed;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.FeatureManagement;
 using Serilog;
@@ -95,8 +96,14 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
-app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") });
+// Health checks are exempt from the global rate limiter (found via an actual load test, not assumed): the
+// same 100-req/min-per-IP budget applied to every other endpoint also covered these by default, so a burst
+// of *legitimate* API traffic from one client could exhaust the budget and start failing this container's
+// own Docker HEALTHCHECK (or an external load balancer's liveness probe) purely as a side effect — causing
+// an orchestrator to kill/restart a perfectly healthy container. Liveness/readiness probes are operationally
+// critical, not a user-facing abuse surface, so they should never be subject to abuse-prevention throttling.
+app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false }).DisableRateLimiting();
+app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check => check.Tags.Contains("ready") }).DisableRateLimiting();
 
 app.Run();
 

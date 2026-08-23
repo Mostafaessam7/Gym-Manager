@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymManager.Application.Attendance.GetMemberCheckInCode;
 
-public sealed class GetMemberCheckInCodeQueryHandler(IApplicationReadDb readDb, IQrCodeGenerator qrCodeGenerator)
+public sealed class GetMemberCheckInCodeQueryHandler(IApplicationReadDb readDb, IQrCodeGenerator qrCodeGenerator, IBranchAccessGuard branchAccessGuard)
     : IQueryHandler<GetMemberCheckInCodeQuery, Result<MemberCheckInCodeResponse>>
 {
     public async Task<Result<MemberCheckInCodeResponse>> Handle(GetMemberCheckInCodeQuery query, CancellationToken cancellationToken)
@@ -14,6 +14,10 @@ public sealed class GetMemberCheckInCodeQueryHandler(IApplicationReadDb readDb, 
         var member = await readDb.Members.FirstOrDefaultAsync(m => m.Id == query.MemberId, cancellationToken);
         if (member is null)
             return Result.Failure<MemberCheckInCodeResponse>(MemberErrors.NotFound);
+
+        var accessResult = branchAccessGuard.EnsureCanAccess(member.BranchId);
+        if (accessResult.IsFailure)
+            return Result.Failure<MemberCheckInCodeResponse>(accessResult.Error);
 
         var qrPng = qrCodeGenerator.GeneratePng(member.CheckInCode);
 

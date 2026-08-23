@@ -10,14 +10,19 @@ using Microsoft.EntityFrameworkCore;
 namespace GymManager.Application.BodyMeasurements.RecordBodyMeasurement;
 
 public sealed class RecordBodyMeasurementCommandHandler(
-    IApplicationReadDb readDb, IBodyMeasurementRepository bodyMeasurementRepository, IUnitOfWork unitOfWork)
+    IApplicationReadDb readDb, IBodyMeasurementRepository bodyMeasurementRepository, IUnitOfWork unitOfWork,
+    IBranchAccessGuard branchAccessGuard)
     : ICommandHandler<RecordBodyMeasurementCommand, Result<BodyMeasurementResponse>>
 {
     public async Task<Result<BodyMeasurementResponse>> Handle(RecordBodyMeasurementCommand command, CancellationToken cancellationToken)
     {
-        var memberExists = await readDb.Members.AnyAsync(m => m.Id == command.MemberId, cancellationToken);
-        if (!memberExists)
+        var member = await readDb.Members.FirstOrDefaultAsync(m => m.Id == command.MemberId, cancellationToken);
+        if (member is null)
             return Result.Failure<BodyMeasurementResponse>(MemberErrors.NotFound);
+
+        var accessResult = branchAccessGuard.EnsureCanAccess(member.BranchId);
+        if (accessResult.IsFailure)
+            return Result.Failure<BodyMeasurementResponse>(accessResult.Error);
 
         var measurement = BodyMeasurement.Record(
             command.MemberId, command.RecordedOnUtc, command.HeightCm, command.WeightKg, command.BodyFatPercentage,

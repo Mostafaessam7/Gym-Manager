@@ -1,3 +1,4 @@
+using GymManager.Application.Abstractions;
 using GymManager.Domain.Abstractions;
 using GymManager.Domain.Common;
 using GymManager.Domain.Expenses;
@@ -7,7 +8,8 @@ using GymManager.SharedKernel.Results;
 
 namespace GymManager.Application.Expenses.UpdateExpense;
 
-public sealed class UpdateExpenseCommandHandler(IExpenseRepository expenseRepository, IUnitOfWork unitOfWork)
+public sealed class UpdateExpenseCommandHandler(
+    IExpenseRepository expenseRepository, IUnitOfWork unitOfWork, IBranchAccessGuard branchAccessGuard)
     : ICommandHandler<UpdateExpenseCommand>
 {
     public async Task<Result> Handle(UpdateExpenseCommand command, CancellationToken cancellationToken)
@@ -15,6 +17,10 @@ public sealed class UpdateExpenseCommandHandler(IExpenseRepository expenseReposi
         var expense = await expenseRepository.GetByIdAsync(command.ExpenseId, cancellationToken);
         if (expense is null)
             return Result.Failure(ExpenseErrors.NotFound);
+
+        var accessResult = branchAccessGuard.EnsureCanAccess(expense.BranchId);
+        if (accessResult.IsFailure)
+            return accessResult;
 
         var amountResult = Money.Create(command.Amount, command.Currency);
         if (amountResult.IsFailure)

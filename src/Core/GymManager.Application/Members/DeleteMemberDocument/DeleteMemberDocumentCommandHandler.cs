@@ -8,7 +8,8 @@ using GymManager.SharedKernel.Results;
 namespace GymManager.Application.Members.DeleteMemberDocument;
 
 public sealed class DeleteMemberDocumentCommandHandler(
-    IMemberRepository memberRepository, IFileStorageService fileStorageService, IUnitOfWork unitOfWork)
+    IMemberRepository memberRepository, IFileStorageService fileStorageService, IUnitOfWork unitOfWork,
+    IBranchAccessGuard branchAccessGuard)
     : ICommandHandler<DeleteMemberDocumentCommand>
 {
     public async Task<Result> Handle(DeleteMemberDocumentCommand command, CancellationToken cancellationToken)
@@ -16,6 +17,10 @@ public sealed class DeleteMemberDocumentCommandHandler(
         var member = await memberRepository.GetByIdAsync(command.MemberId, cancellationToken);
         if (member is null)
             return Result.Failure(MemberErrors.NotFound);
+
+        var accessResult = branchAccessGuard.EnsureCanAccess(member.BranchId);
+        if (accessResult.IsFailure)
+            return accessResult;
 
         var fileUrl = member.Documents.FirstOrDefault(d => d.Id == command.DocumentId)?.FileUrl;
 

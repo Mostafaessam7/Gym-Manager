@@ -1,4 +1,6 @@
+using GymManager.Domain.Branches;
 using GymManager.Domain.Crm;
+using GymManager.Domain.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -39,6 +41,14 @@ internal sealed class LeadConfiguration : IEntityTypeConfiguration<Lead>
         builder.HasIndex(l => l.Stage);
         builder.HasIndex(l => l.AssignedToUserId);
         builder.HasIndex(l => l.BranchId);
+
+        // Shadow (no-navigation) FKs: Lead references Branch/User by id only, matching this codebase's
+        // aggregate-boundary convention of never exposing a cross-aggregate navigation property — this adds
+        // only the physical database constraint, not a domain-model relationship. Restrict, not Cascade:
+        // neither Branch nor User is ever hard-deleted by this application (only deactivated), so this
+        // exists purely as a safety net against orphaned rows, not a behavior the app relies on triggering.
+        builder.HasOne<Branch>().WithMany().HasForeignKey(l => l.BranchId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(l => l.AssignedToUserId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(l => l.RowVersion).IsRowVersion();
     }

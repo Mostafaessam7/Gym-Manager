@@ -25,7 +25,10 @@ const NAV_ITEMS = [
   { path: '/gift-cards', labelKey: 'nav.giftCards', icon: '🎁', permission: 'gift-cards:view' },
   { path: '/lockers', labelKey: 'nav.lockers', icon: '🔒', permission: 'lockers:view' },
   { path: '/branches', labelKey: 'nav.branches', icon: '🏢', permission: 'branches:view' },
+  { path: '/expenses', labelKey: 'nav.expenses', icon: '💸', permission: 'expenses:view' },
   { path: '/reports', labelKey: 'nav.reports', icon: '📈', permission: 'reports:view' },
+  { path: '/audit-logs', labelKey: 'nav.auditLogs', icon: '🕵️', permission: 'audit-logs:view' },
+  { path: '/notifications', labelKey: 'nav.notifications', icon: '🔔', permission: 'notifications:manage' },
   { path: '/users', labelKey: 'nav.users', icon: '🛡️', permission: 'users:view' },
   { path: '/settings', labelKey: 'nav.settings', icon: '⚙️', permission: 'settings:manage' },
 ];
@@ -117,7 +120,10 @@ async function registerModuleRoutes() {
     '/gift-cards': () => import('./modules/giftCards.js'),
     '/lockers': () => import('./modules/lockers.js'),
     '/branches': () => import('./modules/branches.js'),
+    '/expenses': () => import('./modules/expenses.js'),
     '/reports': () => import('./modules/reports.js'),
+    '/audit-logs': () => import('./modules/auditLogs.js'),
+    '/notifications': () => import('./modules/notifications.js'),
     '/users': () => import('./modules/users.js'),
     '/settings': () => import('./modules/settings.js'),
   };
