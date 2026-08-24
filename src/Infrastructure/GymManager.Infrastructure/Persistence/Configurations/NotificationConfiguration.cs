@@ -1,3 +1,5 @@
+using GymManager.Domain.Identity;
+using GymManager.Domain.Members;
 using GymManager.Domain.Notifications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -22,6 +24,11 @@ internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notif
 
         builder.HasIndex(n => n.RecipientUserId);
         builder.HasIndex(n => n.RecipientMemberId);
+
+        // Shadow (no-navigation) FKs — see LeadConfiguration for the rationale. Both nullable: a notification
+        // is addressed to either a User or a Member (or neither, e.g. a low-stock digest), never required.
+        builder.HasOne<User>().WithMany().HasForeignKey(n => n.RecipientUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Member>().WithMany().HasForeignKey(n => n.RecipientMemberId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(n => n.RowVersion).IsRowVersion();
     }

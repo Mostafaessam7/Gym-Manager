@@ -1,3 +1,4 @@
+using GymManager.Domain.Members;
 using GymManager.Domain.Memberships;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -49,6 +50,9 @@ internal sealed class MembershipConfiguration : IEntityTypeConfiguration<Members
 
         builder.HasIndex(m => m.MemberId);
         builder.HasIndex(m => new { m.Status, m.EndDate });
+
+        // Shadow (no-navigation) FK — see LeadConfiguration for the rationale.
+        builder.HasOne<Member>().WithMany().HasForeignKey(m => m.MemberId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(m => m.RowVersion).IsRowVersion();
     }

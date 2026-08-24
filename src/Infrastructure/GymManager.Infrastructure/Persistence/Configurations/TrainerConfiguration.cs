@@ -1,3 +1,4 @@
+using GymManager.Domain.Branches;
 using GymManager.Domain.Trainers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -40,6 +41,9 @@ internal sealed class TrainerConfiguration : IEntityTypeConfiguration<Trainer>
         builder.Navigation(t => t.Availability).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.HasIndex(t => t.BranchId);
+
+        // Shadow (no-navigation) FK — see LeadConfiguration for the rationale.
+        builder.HasOne<Branch>().WithMany().HasForeignKey(t => t.BranchId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(t => t.RowVersion).IsRowVersion();
     }

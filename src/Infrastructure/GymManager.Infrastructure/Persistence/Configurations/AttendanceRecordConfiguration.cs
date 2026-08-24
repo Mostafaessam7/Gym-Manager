@@ -1,4 +1,6 @@
 using GymManager.Domain.Attendance;
+using GymManager.Domain.Branches;
+using GymManager.Domain.Members;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -17,6 +19,10 @@ internal sealed class AttendanceRecordConfiguration : IEntityTypeConfiguration<A
 
         builder.HasIndex(a => new { a.MemberId, a.CheckOutUtc });
         builder.HasIndex(a => new { a.BranchId, a.CheckInUtc });
+
+        // Shadow (no-navigation) FKs — see LeadConfiguration for the rationale.
+        builder.HasOne<Member>().WithMany().HasForeignKey(a => a.MemberId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Branch>().WithMany().HasForeignKey(a => a.BranchId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(a => a.RowVersion).IsRowVersion();
     }

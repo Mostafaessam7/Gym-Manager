@@ -1,3 +1,4 @@
+using GymManager.Domain.Branches;
 using GymManager.Domain.Expenses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -32,6 +33,9 @@ internal sealed class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
 
         builder.HasIndex(e => e.BranchId);
         builder.HasIndex(e => e.ExpenseDate);
+
+        // Shadow (no-navigation) FK — see LeadConfiguration for the rationale.
+        builder.HasOne<Branch>().WithMany().HasForeignKey(e => e.BranchId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(e => e.RowVersion).IsRowVersion();
     }

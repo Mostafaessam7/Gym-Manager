@@ -107,7 +107,7 @@ public sealed class BranchIsolationTests(CustomWebApplicationFactory factory) : 
     }
 
     [Fact]
-    public async Task FreezeMember_In_Another_Branch_Should_Return_Forbidden()
+    public async Task FreezeMember_In_Another_Branch_Should_Return_NotFound()
     {
         var hqClient = await TestAuthHelper.CreateAuthorizedClientAsync(
             factory, Permissions.Branches.Manage, Permissions.Members.Create);
@@ -121,7 +121,12 @@ public sealed class BranchIsolationTests(CustomWebApplicationFactory factory) : 
 
         var response = await scopedClient.PostAsync($"/api/v1/members/{member!.Id}/freeze", content: null);
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        // Phase 14: a global EF Core query filter now scopes every Member query to the caller's branch at
+        // the DB layer (see BranchIsolationFilterFactory) as a safety net on top of this handler's own
+        // IBranchAccessGuard check. Another branch's member is now filtered out of the fetch itself, so the
+        // handler never even reaches its explicit guard — the caller sees NotFound rather than Forbidden,
+        // which is the more secure behavior anyway (it doesn't confirm the id belongs to *some* member).
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -146,7 +151,7 @@ public sealed class BranchIsolationTests(CustomWebApplicationFactory factory) : 
     // tests; see PROJECT_STATUS.md's "Backend gap remediation" section for the full list of affected handlers.
 
     [Fact]
-    public async Task UpdateMedicalInfo_For_Another_Branchs_Member_Should_Return_Forbidden()
+    public async Task UpdateMedicalInfo_For_Another_Branchs_Member_Should_Return_NotFound()
     {
         var hqClient = await TestAuthHelper.CreateAuthorizedClientAsync(
             factory, Permissions.Branches.Manage, Permissions.Members.Create);
@@ -167,11 +172,13 @@ public sealed class BranchIsolationTests(CustomWebApplicationFactory factory) : 
             notes = (string?)null,
         });
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        // Phase 14: see the comment on FreezeMember_In_Another_Branch_Should_Return_NotFound above — the
+        // global query filter now hides another branch's member from the fetch itself.
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetMemberTimeline_For_Another_Branchs_Member_Should_Return_Forbidden()
+    public async Task GetMemberTimeline_For_Another_Branchs_Member_Should_Return_NotFound()
     {
         var hqClient = await TestAuthHelper.CreateAuthorizedClientAsync(
             factory, Permissions.Branches.Manage, Permissions.Members.Create);
@@ -185,11 +192,12 @@ public sealed class BranchIsolationTests(CustomWebApplicationFactory factory) : 
 
         var response = await scopedClient.GetAsync($"/api/v1/members/{member!.Id}/timeline");
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        // Phase 14: see the comment on FreezeMember_In_Another_Branch_Should_Return_NotFound above.
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task RecordBodyMeasurement_For_Another_Branchs_Member_Should_Return_Forbidden()
+    public async Task RecordBodyMeasurement_For_Another_Branchs_Member_Should_Return_NotFound()
     {
         var hqClient = await TestAuthHelper.CreateAuthorizedClientAsync(
             factory, Permissions.Branches.Manage, Permissions.Members.Create);
@@ -216,7 +224,8 @@ public sealed class BranchIsolationTests(CustomWebApplicationFactory factory) : 
             notes = (string?)null,
         });
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        // Phase 14: see the comment on FreezeMember_In_Another_Branch_Should_Return_NotFound above.
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]

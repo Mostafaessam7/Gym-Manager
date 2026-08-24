@@ -1,3 +1,4 @@
+using GymManager.Domain.Branches;
 using GymManager.Domain.Lockers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -20,6 +21,9 @@ internal sealed class LockerConfiguration : IEntityTypeConfiguration<Locker>
         builder.Property(l => l.ModifiedBy).HasMaxLength(256);
 
         builder.HasIndex(l => new { l.BranchId, l.Number }).IsUnique();
+
+        // Shadow (no-navigation) FK — see LeadConfiguration for the rationale.
+        builder.HasOne<Branch>().WithMany().HasForeignKey(l => l.BranchId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(l => l.RowVersion).IsRowVersion();
     }

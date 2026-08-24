@@ -1,3 +1,5 @@
+using GymManager.Domain.Branches;
+using GymManager.Domain.Members;
 using GymManager.Domain.Sales;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -67,6 +69,11 @@ internal sealed class SaleConfiguration : IEntityTypeConfiguration<Sale>
 
         builder.HasIndex(s => s.BranchId);
         builder.HasIndex(s => s.MemberId);
+
+        // Shadow (no-navigation) FKs — see LeadConfiguration for the rationale. MemberId is nullable: a sale
+        // need not be tied to a member (e.g. a walk-in cash purchase).
+        builder.HasOne<Branch>().WithMany().HasForeignKey(s => s.BranchId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Member>().WithMany().HasForeignKey(s => s.MemberId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(s => s.RowVersion).IsRowVersion();
     }

@@ -1,3 +1,4 @@
+using GymManager.Domain.Branches;
 using GymManager.Domain.Products;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -40,6 +41,9 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Navigation(p => p.CostPrice).IsRequired();
 
         builder.HasIndex(p => p.BranchId);
+
+        // Shadow (no-navigation) FK — see LeadConfiguration for the rationale.
+        builder.HasOne<Branch>().WithMany().HasForeignKey(p => p.BranchId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(p => p.RowVersion).IsRowVersion();
     }

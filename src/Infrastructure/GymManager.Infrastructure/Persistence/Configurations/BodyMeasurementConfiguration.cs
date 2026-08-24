@@ -1,4 +1,5 @@
 using GymManager.Domain.BodyMeasurements;
+using GymManager.Domain.Members;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -28,6 +29,9 @@ internal sealed class BodyMeasurementConfiguration : IEntityTypeConfiguration<Bo
         builder.Ignore(b => b.Bmi);
 
         builder.HasIndex(b => new { b.MemberId, b.RecordedOnUtc });
+
+        // Shadow (no-navigation) FK — see LeadConfiguration for the rationale.
+        builder.HasOne<Member>().WithMany().HasForeignKey(b => b.MemberId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(b => b.RowVersion).IsRowVersion();
     }

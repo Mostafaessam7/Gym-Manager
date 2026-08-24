@@ -4,6 +4,7 @@ using GymManager.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GymManager.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(GymManagerDbContext))]
-    partial class GymManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260824125107_AddRemainingCrossAggregateForeignKeys")]
+    partial class AddRemainingCrossAggregateForeignKeys
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -1,3 +1,4 @@
+using GymManager.Domain.Identity;
 using GymManager.Domain.Staff;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -23,6 +24,9 @@ internal sealed class LeaveRequestConfiguration : IEntityTypeConfiguration<Leave
 
         builder.HasIndex(l => new { l.UserId, l.StartDate });
         builder.HasIndex(l => l.Status);
+
+        // Shadow (no-navigation) FK — see LeadConfiguration for the rationale.
+        builder.HasOne<User>().WithMany().HasForeignKey(l => l.UserId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(l => l.RowVersion).IsRowVersion();
     }

@@ -1,4 +1,6 @@
+using GymManager.Domain.Branches;
 using GymManager.Domain.Classes;
+using GymManager.Domain.Trainers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -32,6 +34,13 @@ internal sealed class ClassSessionConfiguration : IEntityTypeConfiguration<Class
         builder.HasIndex(s => s.TrainerId);
         builder.HasIndex(s => s.BranchId);
         builder.HasIndex(s => new { s.StartUtc, s.EndUtc });
+
+        // Shadow (no-navigation) FKs — see LeadConfiguration for the rationale. ClassBooking.MemberId (an
+        // owned collection referencing another aggregate) is left index-only, consistent with Phase 11's
+        // original scoping — a shadow FK from an owned type still needs its own careful verification and
+        // wasn't bundled into this mechanical sweep of top-level entity references.
+        builder.HasOne<Trainer>().WithMany().HasForeignKey(s => s.TrainerId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Branch>().WithMany().HasForeignKey(s => s.BranchId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(s => s.RowVersion).IsRowVersion();
     }

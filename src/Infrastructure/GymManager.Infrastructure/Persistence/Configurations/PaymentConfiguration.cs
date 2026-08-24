@@ -1,3 +1,5 @@
+using GymManager.Domain.Branches;
+using GymManager.Domain.Members;
 using GymManager.Domain.Payments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -34,6 +36,10 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         builder.HasIndex(p => p.BranchId);
         builder.HasIndex(p => new { p.ReferenceType, p.ReferenceId });
         builder.HasIndex(p => p.GatewayReferenceId).IsUnique().HasFilter("[GatewayReferenceId] IS NOT NULL");
+
+        // Shadow (no-navigation) FKs — see LeadConfiguration for the rationale.
+        builder.HasOne<Member>().WithMany().HasForeignKey(p => p.MemberId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Branch>().WithMany().HasForeignKey(p => p.BranchId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(p => p.RowVersion).IsRowVersion();
     }

@@ -1,4 +1,5 @@
 using GymManager.Domain.GiftCards;
+using GymManager.Domain.Members;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -53,6 +54,10 @@ internal sealed class GiftCardConfiguration : IEntityTypeConfiguration<GiftCard>
         });
 
         builder.HasIndex(g => g.IssuedToMemberId);
+
+        // Shadow (no-navigation) FK — see LeadConfiguration for the rationale. Nullable: a gift card need not
+        // be issued to any particular member (e.g. a generic promotional card).
+        builder.HasOne<Member>().WithMany().HasForeignKey(g => g.IssuedToMemberId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(g => g.RowVersion).IsRowVersion();
     }

@@ -1,3 +1,4 @@
+using GymManager.Domain.Members;
 using GymManager.Domain.Nutrition;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -39,6 +40,9 @@ internal sealed class NutritionPlanConfiguration : IEntityTypeConfiguration<Nutr
         });
 
         builder.HasIndex(p => new { p.MemberId, p.IsActive });
+
+        // Shadow (no-navigation) FK — see LeadConfiguration for the rationale.
+        builder.HasOne<Member>().WithMany().HasForeignKey(p => p.MemberId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(p => p.RowVersion).IsRowVersion();
     }

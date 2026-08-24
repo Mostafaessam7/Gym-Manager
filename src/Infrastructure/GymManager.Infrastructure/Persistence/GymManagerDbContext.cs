@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Text.Json;
 using GymManager.Application.Abstractions;
 using GymManager.Domain.Abstractions;
@@ -157,20 +158,51 @@ public sealed class GymManagerDbContext(
 
     IQueryable<Commission> IApplicationReadDb.Commissions => Commissions.AsNoTracking();
 
+    /// <summary>The current caller's branch (<see langword="null"/> for an unscoped, HQ-level caller),
+    /// re-evaluated per query against whichever context instance is actually executing it. Backs the
+    /// branch-isolation global query filter built by <see cref="BranchIsolationFilterFactory"/> — see that
+    /// type's remarks for why this needs to be an instance member rather than a value captured once.</summary>
+    internal Guid? CurrentBranchId => currentUserService.BranchId;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(GymManagerDbContext).Assembly);
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
-            if (typeof(ISoftDeletableEntity).IsAssignableFrom(entityType.ClrType))
-            {
-                modelBuilder.Entity(entityType.ClrType)
-                    .HasQueryFilter(SoftDeleteFilterFactory.Build(entityType.ClrType));
-            }
+            if (entityType.IsOwned())
+                continue;
+
+            var clrType = entityType.ClrType;
+            LambdaExpression? filter = null;
+
+            if (typeof(ISoftDeletableEntity).IsAssignableFrom(clrType))
+                filter = SoftDeleteFilterFactory.Build(clrType);
+
+            var branchFilter = BranchIsolationFilterFactory.Build(clrType, this);
+            if (branchFilter is not null)
+                filter = filter is null ? branchFilter : CombineFilters(filter, branchFilter);
+
+            if (filter is not null)
+                modelBuilder.Entity(clrType).HasQueryFilter(filter);
         }
 
         base.OnModelCreating(modelBuilder);
+    }
+
+    private static LambdaExpression CombineFilters(LambdaExpression first, LambdaExpression second)
+    {
+        var parameter = first.Parameters[0];
+        var secondBody = new ParameterReplacer(second.Parameters[0], parameter).Visit(second.Body);
+        return Expression.Lambda(Expression.AndAlso(first.Body, secondBody), parameter);
+    }
+
+    /// <summary>Rewrites a lambda's parameter references so two single-parameter filter expressions built for
+    /// the same entity type (but with structurally distinct <see cref="ParameterExpression"/> instances) can be
+    /// combined into one, via <see cref="Expression.AndAlso(Expression, Expression)"/>.</summary>
+    private sealed class ParameterReplacer(ParameterExpression source, ParameterExpression target) : ExpressionVisitor
+    {
+        protected override Expression VisitParameter(ParameterExpression node) => node == source ? target : node;
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

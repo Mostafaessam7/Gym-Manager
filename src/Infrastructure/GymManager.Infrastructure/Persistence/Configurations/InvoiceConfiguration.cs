@@ -1,4 +1,6 @@
+using GymManager.Domain.Branches;
 using GymManager.Domain.Invoices;
+using GymManager.Domain.Members;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -48,6 +50,10 @@ internal sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
 
         builder.HasIndex(i => i.MemberId);
         builder.HasIndex(i => i.BranchId);
+
+        // Shadow (no-navigation) FKs — see LeadConfiguration for the rationale.
+        builder.HasOne<Member>().WithMany().HasForeignKey(i => i.MemberId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Branch>().WithMany().HasForeignKey(i => i.BranchId).OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(i => i.RowVersion).IsRowVersion();
     }
