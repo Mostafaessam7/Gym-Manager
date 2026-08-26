@@ -60,6 +60,11 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
             roles.Property(r => r.Id).ValueGeneratedNever();
             roles.Property(r => r.RoleId).IsRequired();
             roles.HasIndex("UserId", nameof(UserRole.RoleId)).IsUnique();
+
+            // Shadow (no-navigation) FK from within this owned type's builder — see LeadConfiguration for
+            // the rationale, and ClassSessionConfiguration's Bookings for the same pattern applied to an
+            // owned collection.
+            roles.HasOne<Role>().WithMany().HasForeignKey(r => r.RoleId).OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.OwnsMany(u => u.RefreshTokens, tokens =>

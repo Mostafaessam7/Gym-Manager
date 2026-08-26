@@ -1,5 +1,6 @@
 using GymManager.Domain.Branches;
 using GymManager.Domain.Classes;
+using GymManager.Domain.Members;
 using GymManager.Domain.Trainers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -27,6 +28,11 @@ internal sealed class ClassSessionConfiguration : IEntityTypeConfiguration<Class
             bookings.Property(b => b.Id).ValueGeneratedNever();
             bookings.Property(b => b.Status).HasConversion<string>().HasMaxLength(20);
             bookings.HasIndex("ClassSessionId", nameof(Domain.Classes.ClassBooking.MemberId));
+
+            // Shadow (no-navigation) FK from within this owned type's builder — see LeadConfiguration for
+            // the rationale. EF Core supports an owned entity holding an additional relationship to a
+            // regular (non-owned) entity like this; it doesn't turn ClassBooking into a shared aggregate root.
+            bookings.HasOne<Member>().WithMany().HasForeignKey(b => b.MemberId).OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Navigation(s => s.Bookings).UsePropertyAccessMode(PropertyAccessMode.Field);

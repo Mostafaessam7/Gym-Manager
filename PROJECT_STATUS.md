@@ -1103,6 +1103,50 @@ FK as of this phase.
 **Verification:** migration generated cleanly (`dotnet ef migrations add`, no live database needed for
 generation). Full suite re-run against InMemory (which enforces FK constraints): **Architecture 9/9, Unit
 206/206, Integration 170/170 — unchanged**, confirming none of the 25 new constraints reject anything the
-application itself ever writes. Not yet re-verified against a real SQL Server instance in this session — no
-Docker/local SQL Server was available here; recommended before merging, consistent with how Phase 11's
-original 5 FKs were eventually verified live.
+application itself ever writes.
+
+---
+
+## Phase 16: Owned-Collection FKs + Live SQL Server Verification (2026-08-26)
+
+Closed the two items Phase 15 left open.
+
+### The last two owned-collection FKs
+
+`ClassBooking.MemberId` (owned by `ClassSession` via `OwnsMany`) and `UserRole.RoleId` (owned by `User`) were
+the only cross-aggregate references left index-only after Phase 15. Added as shadow FKs from *within* the
+owned type's builder (`bookings.HasOne<Member>()...`, `roles.HasOne<Role>()...`) — EF Core supports an owned
+entity holding an additional relationship to a regular entity without promoting it to a shared aggregate root.
+New migration `AddOwnedCollectionForeignKeys`: 2 new indexes + 2 new FK constraints, no data changes. This was
+the last remaining index-only cross-aggregate reference in the schema — every one now has a real DB-level FK.
+
+### Live verification against a real SQL Server engine
+
+No Docker daemon was running in this environment, but **SQL Server LocalDB was available** (`sqllocaldb info`
+found `MSSQLLocalDB`) — a real SQL Server engine, not a substitute. Started it, applied every migration in the
+project (`dotnet ef database update` against a throwaway `GymManagerVerify` database) — all applied cleanly,
+including both new migrations from Phases 15 and 16. Queried `sys.foreign_keys` directly to confirm all 34 FK
+constraints actually exist in the real database with the intended `NO_ACTION` (SQL Server's realization of
+`DeleteBehavior.Restrict`) delete behavior.
+
+**Then ran the actual API live against it** (`dotnet run` with `ConnectionStrings__GymManagerDatabase`
+pointed at LocalDB) rather than stopping at "the migration applied" — this is what actually exercises the new
+global query filter's SQL translation, which InMemory's more lenient client-evaluation could not prove:
+- Logged in as the seeded Owner (exercises the new `UserRole.RoleId` FK on every login, since roles are
+  loaded from that table) — succeeded, full permission claim set issued correctly.
+- Created a branch and a member in it — succeeded (exercises `Member.BranchId` FK + the branch-isolation
+  filter + the soft-delete filter combined via `AndAlso` on the same entity, live, for the first time).
+- Created a second branch and a Front-Desk user scoped to it (exercises the `UserRole.RoleId` FK again on a
+  fresh user).
+- **The critical negative case:** logged in as that branch-scoped Front Desk user and tried to fetch the
+  *other* branch's member by id — got a real `404 Member.NotFound` from actual SQL Server, and a members-list
+  query correctly returned an empty page. This is exactly the behavior the InMemory-based
+  `BranchIsolationTests` assert, now confirmed against the real provider the filter was written for, closing
+  the residual risk explicitly flagged in Phase 15 ("not yet re-verified against a real SQL Server instance").
+
+Temporary verification database dropped and the running API process stopped afterward — no persistent
+artifacts left behind.
+
+**Verification:** full suite re-run after adding the two owned-collection FKs: **Architecture 9/9, Unit
+206/206, Integration 170/170 — unchanged.** Live SQL Server verification above is the direct proof for the
+global query filter's SQL Server translation, which no InMemory-based test can provide.
