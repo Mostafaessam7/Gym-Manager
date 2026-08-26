@@ -30,12 +30,20 @@ function loadStripeJs() {
   return stripePromise;
 }
 
+// Matches the backend's PaymentGatewayProvider enum (GymManager.Domain.Payments).
+const GATEWAY_PROVIDERS = () => [
+  { value: 1, label: t('payments.gatewayStripe') },
+  { value: 2, label: t('payments.gatewayPaymob') },
+  { value: 3, label: t('payments.gatewayFawry') },
+];
+
 async function openGatewayPaymentModal(onSaved) {
   const [members, branches] = await Promise.all([api.get('/members', { pageSize: 100 }), api.get('/branches')]);
 
   const fields = [
     { name: 'memberId', label: t('payments.member'), type: 'select', required: true, options: members.items.map((m) => ({ value: m.id, label: `${m.firstName} ${m.lastName}` })) },
     { name: 'branchId', label: t('payments.branch'), type: 'select', required: true, options: branches.map((b) => ({ value: b.id, label: b.name })) },
+    { name: 'provider', label: t('payments.gatewayProvider'), type: 'select', required: true, options: GATEWAY_PROVIDERS() },
     { name: 'amount', label: t('payments.amount'), type: 'number', step: '0.01', required: true },
     { name: 'currency', label: t('payments.currency'), value: 'usd', required: true },
     { name: 'referenceType', label: t('payments.forField'), type: 'select', options: REFERENCE_TYPES() },
@@ -68,8 +76,25 @@ async function openGatewayPaymentModal(onSaved) {
         className: 'btn-primary',
         onClick: async (ctrl) => {
           const values = readForm(formBody, fields);
+          const provider = Number(values.provider);
           try {
-            const intent = await api.post('/payments/gateway-intent', { ...values, referenceId: null });
+            const intent = await api.post('/payments/gateway-intent', { ...values, provider, referenceId: null });
+
+            if (provider === 2) {
+              // Paymob: clientSecret is the iframe URL — open it in a new tab for the member to enter card
+              // details; this backend never sees card data either way.
+              window.open(intent.clientSecret, '_blank', 'noopener');
+              showFollowUpStep(ctrl, formBody, cardStep, t('payments.paymobRedirectHint'), () => window.open(intent.clientSecret, '_blank', 'noopener'), t('payments.openPaymobWindow'));
+              onSaved();
+              return;
+            }
+
+            if (provider === 3) {
+              // Fawry: clientSecret is the reference number itself — nothing to redirect to, just display it.
+              showFollowUpStep(ctrl, formBody, cardStep, `${t('payments.fawryReferenceHint')} ${t('payments.fawryReferenceLabel')}: ${intent.clientSecret}`);
+              onSaved();
+              return;
+            }
 
             const StripeCtor = await loadStripeJs();
             stripe = StripeCtor(intent.publishableKey);
@@ -112,6 +137,30 @@ async function openGatewayPaymentModal(onSaved) {
       },
     ],
   });
+}
+
+// Shared by the Paymob/Fawry branches above: replaces the form with a plain informational step (no card
+// element needed for either — Paymob's card entry happens in its own iframe/window, Fawry has no card step
+// at all), plus a single "Done" button.
+function showFollowUpStep(ctrl, formBody, cardStep, message, onReopen, reopenLabel) {
+  formBody.classList.add('hidden');
+  cardStep.classList.remove('hidden');
+  cardStep.innerHTML = `<p class="text-muted">${message}</p>`;
+
+  const footer = ctrl.backdropElement.querySelector('.modal__footer');
+  footer.innerHTML = '';
+  if (onReopen) {
+    const reopenBtn = document.createElement('button');
+    reopenBtn.className = 'btn btn-secondary';
+    reopenBtn.textContent = reopenLabel;
+    reopenBtn.addEventListener('click', onReopen);
+    footer.appendChild(reopenBtn);
+  }
+  const doneBtn = document.createElement('button');
+  doneBtn.className = 'btn btn-primary';
+  doneBtn.textContent = t('payments.done');
+  doneBtn.addEventListener('click', () => ctrl.close());
+  footer.appendChild(doneBtn);
 }
 
 async function openRecordPaymentModal(onSaved) {

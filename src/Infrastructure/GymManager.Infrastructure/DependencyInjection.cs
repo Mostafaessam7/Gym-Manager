@@ -69,10 +69,24 @@ public static class DependencyInjection
         services.AddSingleton<IJwtTokenService, JwtTokenService>();
         services.AddSingleton<ITwoFactorService>(_ => new TotpTwoFactorService(jwtOptions.Issuer));
 
+        // Every configured gateway is registered as its own IPaymentGatewayService instance; the application
+        // layer's PaymentGatewayServiceResolver picks the right one per-call by PaymentGatewayProvider (see
+        // its remarks for why a single, directly-injected IPaymentGatewayService no longer works now that more
+        // than one provider can be registered at once).
         var stripeOptions = configuration.GetSection(StripeOptions.SectionName).Get<StripeOptions>()
             ?? throw new InvalidOperationException("Stripe configuration section is missing.");
         services.AddSingleton(stripeOptions);
         services.AddSingleton<IPaymentGatewayService, StripePaymentGatewayService>();
+
+        var paymobOptions = configuration.GetSection(PaymobOptions.SectionName).Get<PaymobOptions>()
+            ?? throw new InvalidOperationException("Paymob configuration section is missing.");
+        services.AddSingleton(paymobOptions);
+        services.AddSingleton<IPaymentGatewayService, PaymobPaymentGatewayService>();
+
+        var fawryOptions = configuration.GetSection(FawryOptions.SectionName).Get<FawryOptions>()
+            ?? throw new InvalidOperationException("Fawry configuration section is missing.");
+        services.AddSingleton(fawryOptions);
+        services.AddSingleton<IPaymentGatewayService, FawryPaymentGatewayService>();
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IRoleRepository, RoleRepository>();

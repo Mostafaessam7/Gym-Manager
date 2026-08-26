@@ -16,6 +16,9 @@ public static class PaymentErrors
     public static Error GatewayRequestFailed(string reason) =>
         Error.Failure("Payment.GatewayRequestFailed", $"The payment gateway rejected the request: {reason}");
 
+    public static Error GatewayNotConfigured(PaymentGatewayProvider provider) => Error.Failure(
+        "Payment.GatewayNotConfigured", $"No payment gateway is configured for provider '{provider}'.");
+
     public static readonly Error WebhookEventUnrecognized = Error.Validation(
         "Payment.WebhookEventUnrecognized", "The webhook payload could not be matched to a known payment.");
 

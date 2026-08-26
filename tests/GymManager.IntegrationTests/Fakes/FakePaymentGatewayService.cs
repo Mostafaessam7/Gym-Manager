@@ -1,6 +1,7 @@
 using System.Text.Json;
 using GymManager.Application.Abstractions;
 using GymManager.Domain.Common;
+using GymManager.Domain.Payments;
 using GymManager.SharedKernel.Results;
 
 namespace GymManager.IntegrationTests.Fakes;
@@ -16,6 +17,11 @@ namespace GymManager.IntegrationTests.Fakes;
 /// </summary>
 public sealed class FakePaymentGatewayService : IPaymentGatewayService
 {
+    /// <summary>Settable so tests can register more than one fake (one per <see cref="PaymentGatewayProvider"/>)
+    /// and prove <c>PaymentGatewayServiceResolver</c> picks the right one — defaults to <c>Stripe</c> since
+    /// that's what every existing single-gateway test already assumes.</summary>
+    public PaymentGatewayProvider Provider { get; set; } = PaymentGatewayProvider.Stripe;
+
     public string PublishableKey => "pk_test_fake";
 
     public bool FailNextCreate { get; set; }
@@ -24,9 +30,16 @@ public sealed class FakePaymentGatewayService : IPaymentGatewayService
 
     public List<(string GatewayReferenceId, Money? Amount)> RefundCalls { get; } = [];
 
+    /// <summary>How many times <see cref="CreatePaymentIntentAsync"/> was called on this specific instance —
+    /// lets a test with more than one fake registered (one per provider) prove a request actually reached
+    /// *this* one and not a different provider's fake.</summary>
+    public int CreateCalls { get; private set; }
+
     public Task<Result<PaymentGatewayIntentResult>> CreatePaymentIntentAsync(
         Money amount, string? receiptEmail, IReadOnlyDictionary<string, string>? metadata, CancellationToken cancellationToken = default)
     {
+        CreateCalls++;
+
         if (FailNextCreate)
         {
             return Task.FromResult(Result.Failure<PaymentGatewayIntentResult>(

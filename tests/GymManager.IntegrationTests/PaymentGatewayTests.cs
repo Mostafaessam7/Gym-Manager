@@ -29,6 +29,7 @@ public sealed class PaymentGatewayTests(PaymentGatewayWebApplicationFactory fact
         referenceType = 4, // Other
         referenceId = (Guid?)null,
         receiptEmail = "member@example.com",
+        provider = 1, // Stripe — the fixture's single FakePaymentGatewayService defaults to reporting Stripe.
     };
 
     [Fact]
@@ -170,6 +171,52 @@ public sealed class PaymentGatewayTests(PaymentGatewayWebApplicationFactory fact
 
         var reloaded = await (await client.GetAsync($"/api/v1/payments?branchId={branchId}")).Content.ReadFromJsonAsync<PagedPayments>();
         Assert.Equal("Refunded", reloaded!.Items.Single(p => p.Id == intent.PaymentId).Status);
+    }
+
+    [Fact]
+    public async Task CreateGatewayPaymentIntent_With_Provider_Paymob_Should_Route_To_The_Paymob_Gateway_Not_Stripe()
+    {
+        var client = await TestAuthHelper.CreateAuthorizedClientAsync(factory, Permissions.Payments.Process, Permissions.Payments.View);
+        var branchId = Guid.NewGuid();
+        var stripeCreateCallsBefore = factory.Gateway.CreateCalls;
+        var paymobCreateCallsBefore = factory.PaymobGateway.CreateCalls;
+
+        var body = new
+        {
+            memberId = Guid.NewGuid(), branchId, amount = 49.99m, currency = "USD",
+            referenceType = 4, referenceId = (Guid?)null, receiptEmail = "member@example.com",
+            provider = 2, // Paymob
+        };
+        var response = await client.PostAsJsonAsync("/api/v1/payments/gateway-intent", body);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var intent = await response.Content.ReadFromJsonAsync<PaymentGatewayIntentResponse>();
+
+        var page = await (await client.GetAsync($"/api/v1/payments?branchId={branchId}")).Content.ReadFromJsonAsync<PagedPayments>();
+        var payment = page!.Items.Single(p => p.Id == intent!.PaymentId);
+        Assert.Equal("Paymob", payment.GatewayProvider);
+
+        // The request reached PaymobGateway's CreatePaymentIntentAsync exactly once, and never touched the
+        // Stripe-registered Gateway fake at all — proving the resolver picked the right one, not just
+        // whichever was registered first/last.
+        Assert.Equal(paymobCreateCallsBefore + 1, factory.PaymobGateway.CreateCalls);
+        Assert.Equal(stripeCreateCallsBefore, factory.Gateway.CreateCalls);
+    }
+
+    [Fact]
+    public async Task CreateGatewayPaymentIntent_With_Provider_None_Should_Return_BadRequest()
+    {
+        var client = await TestAuthHelper.CreateAuthorizedClientAsync(factory, Permissions.Payments.Process);
+        var body = new
+        {
+            memberId = Guid.NewGuid(), branchId = Guid.NewGuid(), amount = 49.99m, currency = "USD",
+            referenceType = 4, referenceId = (Guid?)null, receiptEmail = (string?)null,
+            provider = 0, // None
+        };
+
+        var response = await client.PostAsJsonAsync("/api/v1/payments/gateway-intent", body);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

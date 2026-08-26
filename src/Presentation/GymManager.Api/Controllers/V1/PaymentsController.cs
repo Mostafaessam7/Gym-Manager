@@ -27,7 +27,7 @@ public sealed class PaymentsController(IDispatcher dispatcher) : ControllerBase
 
     public sealed record CreateGatewayPaymentIntentRequest(
         Guid MemberId, Guid BranchId, decimal Amount, string Currency,
-        PaymentReferenceType ReferenceType, Guid? ReferenceId, string? ReceiptEmail);
+        PaymentReferenceType ReferenceType, Guid? ReferenceId, string? ReceiptEmail, PaymentGatewayProvider Provider);
 
     [HttpGet]
     [HasPermission(Permissions.Payments.View)]
@@ -58,17 +58,19 @@ public sealed class PaymentsController(IDispatcher dispatcher) : ControllerBase
         return result.IsSuccess ? NoContent() : result.ToProblemDetails();
     }
 
-    /// <summary>Starts a card payment through the configured gateway (Stripe). The response's
-    /// <c>clientSecret</c>/<c>publishableKey</c> are what the frontend needs to collect card details and
-    /// confirm the payment client-side via Stripe.js — this endpoint never sees card data itself. The
-    /// payment stays <c>Pending</c> until <see cref="StripeWebhookController"/> receives confirmation.</summary>
+    /// <summary>Starts a payment through the requested gateway (Stripe, Paymob, or Fawry). The response's
+    /// <c>clientSecret</c>/<c>publishableKey</c> are gateway-specific — a Stripe.js client secret, a Paymob
+    /// iframe URL to redirect to, or a Fawry reference number to display — see
+    /// <c>IPaymentGatewayService.CreatePaymentIntentAsync</c>'s remarks for what each provider hands back.
+    /// This endpoint never sees card data itself. The payment stays <c>Pending</c> until the matching
+    /// <c>/webhooks/{provider}</c> endpoint receives confirmation.</summary>
     [HttpPost("gateway-intent")]
     [HasPermission(Permissions.Payments.Process)]
     public async Task<IActionResult> CreateGatewayPaymentIntent(CreateGatewayPaymentIntentRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateGatewayPaymentIntentCommand(
             request.MemberId, request.BranchId, request.Amount, request.Currency,
-            request.ReferenceType, request.ReferenceId, request.ReceiptEmail);
+            request.ReferenceType, request.ReferenceId, request.ReceiptEmail, request.Provider);
         var result = await dispatcher.Send(command, cancellationToken);
 
         return result.IsSuccess ? Ok(result.Value) : result.ToProblemDetails();

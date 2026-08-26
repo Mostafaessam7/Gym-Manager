@@ -16,4 +16,5 @@ public sealed record CreateGatewayPaymentIntentCommand(
     string Currency,
     PaymentReferenceType ReferenceType,
     Guid? ReferenceId,
-    string? ReceiptEmail) : ICommand<Result<PaymentGatewayIntentResponse>>;
+    string? ReceiptEmail,
+    PaymentGatewayProvider Provider) : ICommand<Result<PaymentGatewayIntentResponse>>;

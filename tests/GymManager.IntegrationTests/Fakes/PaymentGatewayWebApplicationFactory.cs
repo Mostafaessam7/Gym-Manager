@@ -1,4 +1,5 @@
 using GymManager.Application.Abstractions;
+using GymManager.Domain.Payments;
 using GymManager.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -10,15 +11,20 @@ namespace GymManager.IntegrationTests.Fakes;
 
 /// <summary>
 /// Same InMemory-database swap as <see cref="CustomWebApplicationFactory"/>, plus replacing the real
-/// Stripe-backed <see cref="IPaymentGatewayService"/> with a <see cref="FakePaymentGatewayService"/> the test
-/// can control and inspect — kept as its own factory rather than added to
-/// <see cref="CustomWebApplicationFactory"/> so every other test's DI container is untouched.
+/// gateway-backed <see cref="IPaymentGatewayService"/> registrations with two <see cref="FakePaymentGatewayService"/>
+/// instances (one per <see cref="Gateway"/>/<see cref="PaymobGateway"/>) the test can control and inspect —
+/// kept as its own factory rather than added to <see cref="CustomWebApplicationFactory"/> so every other
+/// test's DI container is untouched. Registering two, not one, is what actually proves
+/// <c>PaymentGatewayServiceResolver</c> picks the right gateway per request rather than always resolving
+/// whichever was registered first/last.
 /// </summary>
 public sealed class PaymentGatewayWebApplicationFactory : WebApplicationFactory<Program>
 {
     public string DatabaseName { get; } = $"GymManagerTests-{Guid.NewGuid()}";
 
-    public FakePaymentGatewayService Gateway { get; } = new();
+    public FakePaymentGatewayService Gateway { get; } = new() { Provider = PaymentGatewayProvider.Stripe };
+
+    public FakePaymentGatewayService PaymobGateway { get; } = new() { Provider = PaymentGatewayProvider.Paymob };
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -36,6 +42,7 @@ public sealed class PaymentGatewayWebApplicationFactory : WebApplicationFactory<
 
             services.RemoveAll<IPaymentGatewayService>();
             services.AddSingleton<IPaymentGatewayService>(Gateway);
+            services.AddSingleton<IPaymentGatewayService>(PaymobGateway);
 
             using var scope = services.BuildServiceProvider().CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<GymManagerDbContext>();

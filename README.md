@@ -110,9 +110,14 @@ Other environment variables of note:
 
 ## Stripe payment gateway
 
-`POST /api/v1/payments/gateway-intent` starts a card payment via Stripe and `POST /api/v1/webhooks/stripe`
-receives its outcome asynchronously — the `Payment` stays `Pending` until the webhook confirms it, unlike
-`POST /api/v1/payments` (cash/manually-recorded payments, which are created already-settled).
+`POST /api/v1/payments/gateway-intent` starts a payment through the gateway named in its `provider` field
+(`1` = Stripe, `2` = Paymob, `3` = Fawry) and the matching `POST /api/v1/webhooks/{stripe|paymob|fawry}`
+endpoint receives its outcome asynchronously — the `Payment` stays `Pending` until the webhook confirms it,
+unlike `POST /api/v1/payments` (cash/manually-recorded payments, which are created already-settled). More than
+one gateway can be configured and used at once; `PaymentGatewayServiceResolver` picks the right one per
+request.
+
+### Stripe
 
 To use it:
 
@@ -137,9 +142,38 @@ Test-mode keys work identically to live keys for every code path this integratio
 values differ, so there is no separate "sandbox mode" toggle. Use Stripe's
 [test card numbers](https://stripe.com/docs/testing) (e.g. `4242 4242 4242 4242`, any future expiry, any CVC)
 against the `clientSecret` returned by `gateway-intent` to exercise the flow end-to-end without moving real
-money. Only Stripe is wired up today; Paymob/Fawry are unimplemented — the `IPaymentGatewayService`
-abstraction in `GymManager.Application.Abstractions` is provider-agnostic, so adding one means implementing
-that interface, not changing any command/controller code.
+money.
+
+### Paymob and Fawry
+
+Both are wired up (`PaymobPaymentGatewayService`/`FawryPaymentGatewayService` in
+`GymManager.Infrastructure.PaymentGateways`), but — unlike Stripe — **neither has been verified against a
+live merchant sandbox**, since both require real merchant registration/KYC to obtain even test credentials, and
+none was available while building this. The request/response shapes and signature algorithms follow each
+provider's public documentation and are self-tested (`PaymobPaymentGatewayServiceTests`/
+`FawryPaymentGatewayServiceTests` — a fake HTTP handler standing in for each provider's API, proving the code
+is internally consistent), but treat this as a strong scaffold to verify against your own merchant dashboard's
+docs before going live, not a certified-correct integration the way Stripe's is.
+
+- **Paymob**: set `Paymob:ApiKey`, `Paymob:IntegrationId`, `Paymob:IframeId`, `Paymob:HmacSecret` (all from
+  the merchant dashboard: Settings → Account Info / Payment Integrations / iFrames). `Paymob:ApiKey` and
+  `Paymob:HmacSecret` are gated by `SecretsValidator` the same way the Stripe secrets are. `gateway-intent`'s
+  `clientSecret` for a Paymob payment is an iframe URL to redirect the member to (card entry happens there,
+  never on this backend) — the frontend opens it in a new tab.
+- **Fawry**: set `Fawry:MerchantCode`, `Fawry:SecurityKey` (from your FawryPay onboarding pack).
+  `Fawry:SecurityKey` is gated the same way. This integration deliberately uses Fawry's `PAYATFAWRY` reference-
+  number flow — cash paid at any Fawry retail outlet, ATM, or mobile wallet — rather than card processing,
+  since that's genuinely different from what Stripe/Paymob already cover; `gateway-intent`'s `clientSecret`
+  for a Fawry payment is the reference number itself, meant to be displayed to the member.
+
+```bash
+export Paymob__ApiKey="..."
+export Paymob__IntegrationId="..."
+export Paymob__IframeId="..."
+export Paymob__HmacSecret="..."
+export Fawry__MerchantCode="..."
+export Fawry__SecurityKey="..."
+```
 
 ## Running tests
 

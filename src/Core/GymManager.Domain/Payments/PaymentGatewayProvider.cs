@@ -6,4 +6,6 @@ public enum PaymentGatewayProvider
 {
     None = 0,
     Stripe = 1,
+    Paymob = 2,
+    Fawry = 3,
 }

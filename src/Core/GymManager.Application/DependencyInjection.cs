@@ -18,6 +18,7 @@ public static class DependencyInjection
 
         services.AddScoped<IDispatcher, Dispatcher>();
         services.AddScoped<IBranchAccessGuard, BranchAccessGuard>();
+        services.AddScoped<IPaymentGatewayServiceResolver, PaymentGatewayServiceResolver>();
 
         services.Scan(scan => scan.FromAssemblies(assembly)
             .AddClasses(classes => classes.AssignableTo(typeof(ICommandHandler<,>)), publicOnly: false)

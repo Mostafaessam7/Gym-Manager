@@ -1150,3 +1150,106 @@ artifacts left behind.
 **Verification:** full suite re-run after adding the two owned-collection FKs: **Architecture 9/9, Unit
 206/206, Integration 170/170 — unchanged.** Live SQL Server verification above is the direct proof for the
 global query filter's SQL Server translation, which no InMemory-based test can provide.
+
+---
+
+## Phase 17: Paymob and Fawry Payment Gateway Integration (2026-08-26)
+
+Closed the last remaining backlog item from the original enterprise-scope request (#28's "Paymob/Fawry remain
+unimplemented"). Adding a second real gateway meant the existing single-`IPaymentGatewayService`-registration
+design no longer fit — see the architecture change below before the gateways themselves.
+
+### Multi-gateway architecture (a real refactor, not just two new files)
+
+Before this phase, exactly one `IPaymentGatewayService` was ever registered, so a plain constructor injection
+resolved it unambiguously; `CreateGatewayPaymentIntentCommandHandler` even hardcoded
+`PaymentGatewayProvider.Stripe` when attaching the gateway reference. With three gateways registrable at
+once, that stops working — ASP.NET Core's DI container resolves a single-`T` injection of a multiply-registered
+service to whichever was registered *last*, silently, which would have made `HandleStripeWebhookCommandHandler`
+resolve to Fawry's service the moment Fawry was registered after it. Fixed properly rather than worked around:
+
+- `IPaymentGatewayService` gained a `Provider` property (each implementation reports its own
+  `PaymentGatewayProvider`) and a new `IPaymentGatewayServiceResolver` abstraction
+  (`PaymentGatewayServiceResolver`, in `GymManager.Application.Services`) picks the right one out of
+  `IEnumerable<IPaymentGatewayService>` by provider — the standard fix for "more than one implementation of an
+  interface needs picking at runtime" that doesn't reach for keyed DI or a raw `IServiceProvider` service-
+  locator in a CQRS handler.
+- `CreateGatewayPaymentIntentCommand`/`CreateGatewayPaymentIntentCommandHandler`/
+  `PaymentsController.CreateGatewayPaymentIntentRequest` all gained a required `Provider` field — the caller
+  now chooses which gateway starts the payment. A new validator rule rejects `Provider: None` explicitly
+  (`400`, naming the real problem) rather than letting a request with a missing/omitted `provider` JSON field
+  silently resolve to `None` and surface as an opaque `500 GatewayNotConfigured`.
+- `RefundPaymentCommandHandler` now resolves by `payment.GatewayProvider` (whichever gateway actually
+  collected *this* payment), not a single injected instance — refunding an old Stripe payment still calls
+  Stripe even after Paymob/Fawry are also configured.
+- `HandleStripeWebhookCommandHandler` now explicitly resolves `PaymentGatewayProvider.Stripe` instead of
+  taking a single injected `IPaymentGatewayService` — closes the exact "silently resolves to the wrong
+  gateway" risk described above. Two new handlers, `HandlePaymobWebhookCommandHandler`/
+  `HandleFawryWebhookCommandHandler`, follow the identical pattern for their own providers (each provider's
+  webhook payload shape is different enough that a shared generic handler isn't a natural fit — matching how
+  Stripe's webhook was always its own dedicated handler/controller, never a generic one).
+- `PaymentGatewayWebhookEvent` gained an optional `SecondaryReferenceId` and `Payment` gained a new
+  `UpdateGatewayReference` method — needed because Paymob's flow uses *two* different ids for the same
+  payment (an order id, known immediately, used to look the payment up when its webhook first arrives; a
+  transaction id, which only exists once that webhook reports it, needed instead for a later refund call).
+  Every other provider leaves `SecondaryReferenceId` null and never calls `UpdateGatewayReference`.
+
+### Paymob (`PaymobPaymentGatewayService`)
+
+Implements Paymob's three-step "Accept API" flow: exchange the account API key for a short-lived auth token,
+register an order for the amount, request a payment key for that order — the payment key is embedded in an
+iframe URL returned as `PaymentGatewayIntentResult.ClientSecret`, which the frontend opens in a new tab (card
+entry happens there; this backend never sees card data). Webhook verification recomputes Paymob's documented
+HMAC-SHA512 over an exact, ordered concatenation of transaction fields and compares it to the `hmac`
+query-string parameter Paymob attaches to the callback URL (Paymob signs via a query parameter, not a header
+or a body field — the new `PaymobWebhookController` extracts it accordingly).
+
+### Fawry (`FawryPaymentGatewayService`)
+
+Deliberately implements Fawry's `PAYATFAWRY` reference-number flow — a code the member pays in cash at any
+Fawry retail outlet, ATM, or mobile wallet, confirmed later by an asynchronous notification — rather than
+Fawry's card-processing API, which would just duplicate Stripe/Paymob. This is Fawry's actual differentiator
+for a gym: a member without a card can still pay. `ClientSecret` here is the reference number itself, meant to
+be displayed to the member, not a URL. Webhook verification recomputes FawryPay's documented SHA-256 signature
+and compares it against the `signature` field carried *inside* the notification's own JSON body (neither a
+header nor a query parameter) — the new `FawryWebhookController` does a lightweight JSON parse to pull that
+field out before dispatching.
+
+### What was and wasn't verified, and why — read before enabling either in production
+
+**Unlike Stripe, no live merchant sandbox account was available for either provider in this session** — both
+Paymob and Fawry require real merchant registration/KYC to obtain even test-mode credentials, unlike Stripe's
+frictionless self-serve test mode. The request/response shapes and — critically — the exact HMAC/signature
+field order for both were implemented from each provider's publicly documented API, not confirmed against
+their real servers. What *was* verified, at the same rigor Stripe's integration originally had before a real
+account confirmed it end-to-end:
+
+- `PaymobPaymentGatewayServiceTests`/`FawryPaymentGatewayServiceTests` (23 new unit tests) exercise the real
+  service code against a fake `HttpMessageHandler` standing in for each provider's API — genuine
+  request-building (the three-step Paymob sequence, the Fawry charge/refund calls), response parsing, and
+  real cryptographic signature verification: a validly-computed HMAC-SHA512 (Paymob)/SHA-256 (Fawry) is
+  genuinely verified by the same code production uses, and a forged signature or a tampered payload are both
+  genuinely rejected — not mocked away, the same proof technique `StripePaymentGatewayServiceTests` already
+  established.
+- `PaymentGatewayServiceResolverTests` (2 new unit tests) prove the resolver picks the correct gateway and
+  fails clearly for an unregistered one.
+- 2 new integration tests in `PaymentGatewayTests.cs` prove the CQRS-level routing: a request naming
+  `provider: Paymob` reaches a distinct Paymob fake and never touches the Stripe fake at all (via a new
+  per-instance call counter on `FakePaymentGatewayService`), and a request with no provider specified
+  (`None`) is rejected with `400`, not a confusing `500`.
+
+**Before enabling either in production:** diff the exact field concatenation order for Paymob's HMAC (in
+`PaymobPaymentGatewayService.ParseWebhookEvent`'s remarks) and Fawry's signature (in
+`FawryPaymentGatewayService.ParseWebhookEvent`'s remarks) against the current copy on your own merchant
+dashboard's documentation — providers do occasionally revise these — and run at least one real test-mode
+payment end-to-end against a live account before trusting this in production. This is a materially different
+confidence level than Stripe's integration, and this document says so plainly rather than implying otherwise.
+
+**Verification:** `dotnet build` clean (0 warnings, 0 errors). Full suite: **Architecture 9/9, Unit 229/229**
+(206 previous + 23 new), **Integration 172/172** (170 previous + 2 new) — zero skips, zero regressions to the
+existing Stripe flow (its own tests are unchanged and still pass, now explicitly requesting
+`provider: Stripe`). Frontend: `frontend/js/modules/payments.js` gained a gateway-provider selector and
+provider-specific follow-up steps (Stripe's existing card element, a "open payment window" step for Paymob, a
+displayed reference number for Fawry); `node --check` passed on all edited files. Not live-verified in a
+browser this session (no backend was running against a real gateway account to exercise end-to-end) — the
+CQRS/HTTP-level integration tests above are what stands in for that.

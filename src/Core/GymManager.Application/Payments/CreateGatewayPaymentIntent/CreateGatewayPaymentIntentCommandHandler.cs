@@ -10,7 +10,7 @@ namespace GymManager.Application.Payments.CreateGatewayPaymentIntent;
 
 public sealed class CreateGatewayPaymentIntentCommandHandler(
     IPaymentRepository paymentRepository,
-    IPaymentGatewayService paymentGatewayService,
+    IPaymentGatewayServiceResolver paymentGatewayServiceResolver,
     ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork,
     IBranchAccessGuard branchAccessGuard)
@@ -22,6 +22,11 @@ public sealed class CreateGatewayPaymentIntentCommandHandler(
         var accessResult = branchAccessGuard.EnsureCanAccess(command.BranchId);
         if (accessResult.IsFailure)
             return Result.Failure<PaymentGatewayIntentResponse>(accessResult.Error);
+
+        var gatewayResult = paymentGatewayServiceResolver.Resolve(command.Provider);
+        if (gatewayResult.IsFailure)
+            return Result.Failure<PaymentGatewayIntentResponse>(gatewayResult.Error);
+        var paymentGatewayService = gatewayResult.Value;
 
         var amountResult = Money.Create(command.Amount, command.Currency);
         if (amountResult.IsFailure)
@@ -40,7 +45,7 @@ public sealed class CreateGatewayPaymentIntentCommandHandler(
         if (intentResult.IsFailure)
             return Result.Failure<PaymentGatewayIntentResponse>(intentResult.Error);
 
-        payment.AttachGatewayReference(PaymentGatewayProvider.Stripe, intentResult.Value.GatewayReferenceId);
+        payment.AttachGatewayReference(command.Provider, intentResult.Value.GatewayReferenceId);
 
         paymentRepository.Add(payment);
         await unitOfWork.SaveChangesAsync(cancellationToken);

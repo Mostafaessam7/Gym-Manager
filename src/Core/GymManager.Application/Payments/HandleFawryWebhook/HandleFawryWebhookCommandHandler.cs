@@ -4,25 +4,21 @@ using GymManager.Domain.Payments;
 using GymManager.SharedKernel.Cqrs;
 using GymManager.SharedKernel.Results;
 
-namespace GymManager.Application.Payments.HandleStripeWebhook;
+namespace GymManager.Application.Payments.HandleFawryWebhook;
 
-/// <summary>Applies a Stripe webhook event to the matching <c>Payment</c>. Deliberately tolerant of
-/// conditions that are expected in normal operation rather than errors: Stripe delivers webhooks
-/// at-least-once (so a redelivered event for an already-completed payment is a no-op, not a failure), and a
-/// webhook for a PaymentIntent this system never created (a stray/test event) is likewise a silent no-op —
-/// both cases still return success so Stripe doesn't retry indefinitely. Only a bad signature or a malformed
-/// payload is treated as a real failure.</summary>
-public sealed class HandleStripeWebhookCommandHandler(
+/// <summary>Applies a FawryPay notification callback to the matching <c>Payment</c> — same tolerant
+/// at-least-once/unknown-reference handling as <c>HandleStripeWebhookCommandHandler</c>, see its remarks.</summary>
+public sealed class HandleFawryWebhookCommandHandler(
     IPaymentGatewayServiceResolver paymentGatewayServiceResolver, IPaymentRepository paymentRepository, IUnitOfWork unitOfWork)
-    : ICommandHandler<HandleStripeWebhookCommand>
+    : ICommandHandler<HandleFawryWebhookCommand>
 {
-    public async Task<Result> Handle(HandleStripeWebhookCommand command, CancellationToken cancellationToken)
+    public async Task<Result> Handle(HandleFawryWebhookCommand command, CancellationToken cancellationToken)
     {
-        var gatewayResult = paymentGatewayServiceResolver.Resolve(PaymentGatewayProvider.Stripe);
+        var gatewayResult = paymentGatewayServiceResolver.Resolve(PaymentGatewayProvider.Fawry);
         if (gatewayResult.IsFailure)
             return gatewayResult;
 
-        var eventResult = gatewayResult.Value.ParseWebhookEvent(command.Payload, command.SignatureHeader);
+        var eventResult = gatewayResult.Value.ParseWebhookEvent(command.Payload, command.Signature);
         if (eventResult.IsFailure)
             return eventResult;
 

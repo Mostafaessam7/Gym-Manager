@@ -77,6 +77,14 @@ public sealed class Payment : AggregateRoot<Guid>, IAuditableEntity
         GatewayReferenceId = gatewayReferenceId;
     }
 
+    /// <summary>Swaps <see cref="GatewayReferenceId"/> for a different value from the same gateway, once a
+    /// provider's flow needs one id to look the payment back up when its webhook first arrives (e.g. Paymob's
+    /// order id, known immediately at intent-creation) and a *different* id later to act on it again (Paymob's
+    /// transaction id, which only exists once the webhook itself reports it, and is what a subsequent refund
+    /// call needs). Safe to call after the webhook lookup has already happened — nothing looks a payment up by
+    /// gateway reference id a second time.</summary>
+    public void UpdateGatewayReference(string gatewayReferenceId) => GatewayReferenceId = gatewayReferenceId;
+
     public Result Complete()
     {
         if (Status != PaymentStatus.Pending)

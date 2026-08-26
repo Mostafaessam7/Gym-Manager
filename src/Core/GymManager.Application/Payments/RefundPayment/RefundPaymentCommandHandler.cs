@@ -8,7 +8,7 @@ using GymManager.SharedKernel.Results;
 namespace GymManager.Application.Payments.RefundPayment;
 
 public sealed class RefundPaymentCommandHandler(
-    IPaymentRepository paymentRepository, IPaymentGatewayService paymentGatewayService,
+    IPaymentRepository paymentRepository, IPaymentGatewayServiceResolver paymentGatewayServiceResolver,
     IUnitOfWork unitOfWork, IBranchAccessGuard branchAccessGuard)
     : ICommandHandler<RefundPaymentCommand>
 {
@@ -24,12 +24,17 @@ public sealed class RefundPaymentCommandHandler(
 
         // Ask the gateway to reverse the charge before flipping local state, so a gateway-side failure
         // (network issue, already refunded there, etc.) doesn't leave this system believing money moved
-        // when it didn't.
+        // when it didn't. Resolved by whichever provider actually collected this specific payment — not
+        // necessarily the same one a caller might use for a *new* payment.
         if (payment.GatewayProvider != PaymentGatewayProvider.None && payment.GatewayReferenceId is not null)
         {
-            var gatewayResult = await paymentGatewayService.RefundAsync(payment.GatewayReferenceId, amount: null, cancellationToken);
+            var gatewayResult = paymentGatewayServiceResolver.Resolve(payment.GatewayProvider);
             if (gatewayResult.IsFailure)
                 return Result.Failure(gatewayResult.Error);
+
+            var refundResult = await gatewayResult.Value.RefundAsync(payment.GatewayReferenceId, amount: null, cancellationToken);
+            if (refundResult.IsFailure)
+                return Result.Failure(refundResult.Error);
         }
 
         var result = payment.Refund();

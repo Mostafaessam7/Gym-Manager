@@ -1,5 +1,6 @@
 using GymManager.Application.Abstractions;
 using GymManager.Domain.Common;
+using GymManager.Domain.Payments;
 using GymManager.Domain.Payments.Errors;
 using GymManager.SharedKernel.Results;
 using Stripe;
@@ -12,6 +13,8 @@ public sealed class StripePaymentGatewayService : IPaymentGatewayService
     private readonly StripeOptions _options;
     private readonly PaymentIntentService _paymentIntentService;
     private readonly RefundService _refundService;
+
+    public PaymentGatewayProvider Provider => PaymentGatewayProvider.Stripe;
 
     public string PublishableKey => _options.PublishableKey;
 

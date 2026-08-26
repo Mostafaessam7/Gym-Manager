@@ -16,6 +16,9 @@ public static class SecretsValidator
     private const string PlaceholderDbPassword = "Your_password123!";
     private const string PlaceholderStripeSecretKeyMarker = "CHANGE_THIS_TO_YOUR_STRIPE_TEST_SECRET_KEY";
     private const string PlaceholderStripeWebhookSecretMarker = "CHANGE_THIS_TO_YOUR_STRIPE_WEBHOOK_SIGNING_SECRET";
+    private const string PlaceholderPaymobApiKeyMarker = "CHANGE_THIS_TO_YOUR_PAYMOB_API_KEY";
+    private const string PlaceholderPaymobHmacSecretMarker = "CHANGE_THIS_TO_YOUR_PAYMOB_HMAC_SECRET";
+    private const string PlaceholderFawrySecurityKeyMarker = "CHANGE_THIS_TO_YOUR_FAWRY_SECURITY_KEY";
 
     public static void EnsureProductionSecretsAreConfigured(IConfiguration configuration)
     {
@@ -36,6 +39,18 @@ public static class SecretsValidator
         var stripeWebhookSecret = configuration["Stripe:WebhookSecret"];
         if (!string.IsNullOrWhiteSpace(stripeWebhookSecret) && stripeWebhookSecret.Contains(PlaceholderStripeWebhookSecretMarker, StringComparison.OrdinalIgnoreCase))
             problems.Add("Stripe:WebhookSecret is still the checked-in placeholder. A forged Stripe-Signature header could otherwise be accepted as genuine. Set it via the Stripe__WebhookSecret environment variable or a secrets manager.");
+
+        var paymobApiKey = configuration["Paymob:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(paymobApiKey) && paymobApiKey.Contains(PlaceholderPaymobApiKeyMarker, StringComparison.OrdinalIgnoreCase))
+            problems.Add("Paymob:ApiKey is still the checked-in placeholder. Set it via the Paymob__ApiKey environment variable or a secrets manager.");
+
+        var paymobHmacSecret = configuration["Paymob:HmacSecret"];
+        if (!string.IsNullOrWhiteSpace(paymobHmacSecret) && paymobHmacSecret.Contains(PlaceholderPaymobHmacSecretMarker, StringComparison.OrdinalIgnoreCase))
+            problems.Add("Paymob:HmacSecret is still the checked-in placeholder. A forged Paymob webhook could otherwise be accepted as genuine. Set it via the Paymob__HmacSecret environment variable or a secrets manager.");
+
+        var fawrySecurityKey = configuration["Fawry:SecurityKey"];
+        if (!string.IsNullOrWhiteSpace(fawrySecurityKey) && fawrySecurityKey.Contains(PlaceholderFawrySecurityKeyMarker, StringComparison.OrdinalIgnoreCase))
+            problems.Add("Fawry:SecurityKey is still the checked-in placeholder. A forged Fawry notification could otherwise be accepted as genuine. Set it via the Fawry__SecurityKey environment variable or a secrets manager.");
 
         var adminPassword = configuration["Seed:AdminPassword"];
         if (!string.IsNullOrWhiteSpace(adminPassword) && adminPassword == DataSeeder.DefaultOwnerPassword)
