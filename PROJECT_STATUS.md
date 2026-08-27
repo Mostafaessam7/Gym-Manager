@@ -1253,3 +1253,35 @@ provider-specific follow-up steps (Stripe's existing card element, a "open payme
 displayed reference number for Fawry); `node --check` passed on all edited files. Not live-verified in a
 browser this session (no backend was running against a real gateway account to exercise end-to-end) — the
 CQRS/HTTP-level integration tests above are what stands in for that.
+
+---
+
+## Phase 18: Real SMS Notifications via Twilio (2026-08-26)
+
+Closed the project's one remaining documented stub: `LoggingSmsSender` (just logs, never actually sends)
+was the default `ISmsSender` unconditionally. Added `TwilioSmsSender`, calling Twilio's REST API directly
+(`POST /2010-04-01/Accounts/{AccountSid}/Messages.json`, Basic-Auth over the account SID/auth token) — no SDK
+dependency, since the API surface needed is one simple, stable, well-documented POST, consistent with how
+Paymob/Fawry were built directly against their HTTP APIs rather than pulling in a client library.
+
+**Deliberately kept optional, unlike the payment gateways:** SMS is an auxiliary notification channel
+(membership-expiry reminders, etc.), not a flow the app depends on to function, so a deployment that never
+configures `Twilio:AccountSid`/`AuthToken`/`FromPhoneNumber` still starts and works — falling back to
+`LoggingSmsSender`, exactly the zero-config behavior this app always had. Only when all three are configured
+does `DependencyInjection.AddInfrastructure` register the real `TwilioSmsSender` instead. This is a different
+gating strategy from Stripe/Paymob/Fawry (which fail startup outside Development/Testing if left as
+placeholders) — deliberately so, since there's no insecure placeholder to guard against here: "not
+configured" just means "falls back to logging," not "silently trusts a public default."
+
+**Verification confidence, same honesty as Phase 17's payment gateways:** no real Twilio account was
+available to this session either, so this wasn't confirmed end-to-end against Twilio's actual servers.
+Unlike Paymob/Fawry, Twilio does offer a genuine self-serve free trial with real (if limited) credentials, so
+this is closer to Stripe's verifiability in principle — but that's a difference in *how easy it would be* to
+verify, not a claim that it was. `TwilioSmsSenderTests` (4 new unit tests) exercises the real request-building
+(endpoint, Basic-Auth header, form fields) and error-message parsing against a fake `HttpMessageHandler`,
+the same proof technique used throughout this codebase's external integrations.
+
+**Verification:** `dotnet build` clean (0 warnings, 0 errors). Full suite: **Architecture 9/9, Unit 233/233**
+(229 previous + 4 new) — Integration/Architecture unchanged, since no integration test exercises `ISmsSender`
+directly (the existing `DomainEventConsumerTests` already cover the notification-creation flow against a
+fake, unaffected by which concrete `ISmsSender` is behind it in a real deployment).

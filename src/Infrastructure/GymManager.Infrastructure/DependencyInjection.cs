@@ -123,7 +123,23 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException("Email configuration section is missing.");
         services.AddSingleton(emailOptions);
         services.AddSingleton<IEmailSender, EmailSender>();
-        services.AddSingleton<ISmsSender, LoggingSmsSender>();
+
+        // Unlike the payment gateways above, Twilio configuration is optional: SMS is an auxiliary
+        // notification channel (reminders, expiry nudges), not a flow the app depends on to function, so a
+        // deployment that never configures it should still start and work — falling back to
+        // LoggingSmsSender, exactly the zero-config behavior this app always had before Twilio was wired in.
+        var twilioOptions = configuration.GetSection(TwilioOptions.SectionName).Get<TwilioOptions>();
+        var twilioConfigured = twilioOptions is { AccountSid.Length: > 0, AuthToken.Length: > 0, FromPhoneNumber.Length: > 0 };
+        if (twilioConfigured)
+        {
+            services.AddSingleton(twilioOptions!);
+            services.AddSingleton<ISmsSender, TwilioSmsSender>();
+        }
+        else
+        {
+            services.AddSingleton<ISmsSender, LoggingSmsSender>();
+        }
+
         services.AddSingleton<IReportExporter, ReportExporter>();
 
         services.AddMemoryCache();

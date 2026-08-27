@@ -175,6 +175,25 @@ export Fawry__MerchantCode="..."
 export Fawry__SecurityKey="..."
 ```
 
+## SMS notifications
+
+Membership-expiry reminders and other SMS-channel notifications are sent via `ISmsSender`. Unlike the payment
+gateways above, no configuration is required to run the app — with no `Twilio` section configured, it falls
+back to `LoggingSmsSender`, which just logs the message (the app's original, always-worked-out-of-the-box
+default). To send real SMS via Twilio, set all three:
+
+```bash
+export Twilio__AccountSid="AC..."
+export Twilio__AuthToken="..."
+export Twilio__FromPhoneNumber="+1..."
+```
+
+`TwilioSmsSender` calls Twilio's REST API directly (no SDK dependency) and is covered by
+`TwilioSmsSenderTests` against a fake HTTP handler, the same proof technique used for the payment gateways —
+Twilio does offer a genuine free trial account with real credentials (unlike Paymob/Fawry), but none was
+available to verify this end-to-end either, so treat it with the same "diff against your own account, test
+once for real before relying on it" caution as Paymob/Fawry above.
+
 ## Running tests
 
 ```bash
