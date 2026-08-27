@@ -1285,3 +1285,102 @@ the same proof technique used throughout this codebase's external integrations.
 (229 previous + 4 new) — Integration/Architecture unchanged, since no integration test exercises `ISmsSender`
 directly (the existing `DomainEventConsumerTests` already cover the notification-creation flow against a
 fake, unaffected by which concrete `ISmsSender` is behind it in a real deployment).
+
+---
+
+## Phase 19: Code Review of Phases 15–18 — a Real Cross-Branch Bypass Found and Fixed (2026-08-27)
+
+Ran a full multi-angle code review (8 finder passes — correctness, removed-behavior, cross-file impact, reuse,
+simplification, efficiency, altitude, conventions) over everything from Phase 15 onward, rather than trusting
+the phase write-ups' own "verified" claims at face value. This is exactly the discipline this document has
+praised elsewhere (Phase 13's self-review, the "verify, don't assert" lesson from the original InMemory
+concurrency bug) applied to this session's own work.
+
+### Critical finding, fixed: the global branch-isolation filter silently defeated 17 handlers' own guards
+
+**The bug:** Phase 15's new global `Member` query filter did exactly what it was designed to do — hide a
+member in another branch from any query — but that created a second-order problem nobody had reasoned
+through: **17 handlers across Memberships (freeze/unfreeze/cancel/renew), Workouts, and Nutrition** fetch the
+*owning member* of their real target (a `Membership`/`WorkoutPlan`/`NutritionPlan`, none of which carry their
+own `BranchId`) purely to resolve a branch for `IBranchAccessGuard.EnsureCanAccess(...)`, using the pattern
+`if (member is not null) { EnsureCanAccess(member.BranchId) }`. Before the global filter, "member is null"
+genuinely meant "doesn't exist," so the guard reliably ran. After it, the global filter itself hides a
+legitimately-existing member in another branch — "member is null" started *also* meaning "exists, but not in
+your branch," and the `if (member is not null)` guard silently skipped the access check entirely instead of
+denying it. The result: **a branch-scoped caller who knew (or enumerated) another branch's membership/
+workout-plan/nutrition-plan id could read it (`GetWorkoutPlanById`, `GetNutritionPlanById`,
+`GetMembershipsByMember`) or mutate it (freeze/unfreeze/cancel/renew a membership; add/update/remove a
+workout exercise or nutrition meal; update/delete the plan itself) across branches** — a real IDOR/broken-
+access-control regression, introduced by code this session itself wrote and had believed was "unchanged and
+still green" because the existing 170-test suite happened not to exercise any of these 17 call paths
+cross-branch.
+
+**Fixed** by making these specific lookups bypass the global filter, since they exist only to authorize, not to
+expose the member: a new `IMemberRepository.GetBranchIdForAuthorizationAsync` (used by the 4 handlers that
+already depended on `IMemberRepository`) and `.IgnoreQueryFilters()` added to the 13 handlers that already
+queried `IApplicationReadDb.Members` directly. Both restore "member is null" to meaning only "genuinely
+doesn't exist," so `EnsureCanAccess` runs — and can actually deny — every time it's supposed to. Also fixes a
+latent, narrower side-effect: a soft-deleted member's plan previously skipped the branch check too (an
+accidental consequence of the pre-existing soft-delete filter, unrelated to Phase 15) — now the check runs
+consistently regardless of soft-delete state, which is more correct, not less.
+
+**Verification:** 3 new regression tests added to `BranchIsolationTests.cs`
+(`FreezeMembership_For_Another_Branchs_Member_Should_Return_Forbidden`,
+`CancelMembership_For_Another_Branchs_Member_Should_Return_Forbidden`,
+`GetWorkoutPlanById_For_Another_Branchs_Member_Should_Return_Forbidden`) — all three fail against the
+pre-fix code (confirmed by reading the vulnerable code path directly, not just trusting the review agent) and
+pass against the fix. Full suite: **Architecture 9/9, Unit 233/233, Integration 175/175** (172 previous + 3
+new), zero skips, zero regressions elsewhere.
+
+### Other findings from the same review, fixed
+
+- **Duplicated constant-time comparison.** `PaymobPaymentGatewayService`/`FawryPaymentGatewayService`'s HMAC/
+  signature verification each hand-rolled their own `CryptographicOperations.FixedTimeEquals` call instead of
+  reusing the shared `ConstantTimeComparer` already used by every other secret comparison in this codebase
+  (`User`'s token-hash checks, `TotpTwoFactorService`) — fixed to call the shared helper, consistent with its
+  own doc comment's stated purpose ("so both use one implementation instead of two independently-written
+  ones" — this would have made it three and four).
+- **Fawry cash payments recorded as `PaymentMethod.Card`.** `CreateGatewayPaymentIntentCommandHandler`
+  hardcoded `PaymentMethod.Card` for every gateway, including Fawry's `PAYATFAWRY` cash-at-outlet flow — any
+  cash-vs-card revenue reporting would have silently misclassified every Fawry payment. Fixed to record
+  `PaymentMethod.Cash` for the Fawry provider.
+- **Paymob webhook could overwrite a real transaction id with an empty string.** A malformed/partial Paymob
+  webhook payload missing the `id` field would have produced `SecondaryReferenceId = ""` (empty, not null) —
+  `HandlePaymobWebhookCommandHandler`'s `if (SecondaryReferenceId is not null)` guard doesn't catch that, so
+  it would have overwritten a payment's working `GatewayReferenceId` with an empty string, breaking any later
+  refund. Fixed: `PaymobPaymentGatewayService.ParseWebhookEvent` now reports `null` (not empty string) when
+  the field is genuinely missing.
+- **Fawry's refund signature was internally inconsistent with itself.** The refund request body includes
+  `refundAmount` when a partial-refund amount is given, but the signature computed alongside it never
+  included that field — fixed to sign it when present, at least making the request self-consistent (Fawry's
+  refund signature field order isn't documented as explicitly as its charge/webhook signatures, so this
+  remains an assumption to verify against a real account, same as the rest of the Paymob/Fawry integration).
+- **Fawry `customerEmail` sent as a literal `null`** when a caller omits the optional `ReceiptEmail` (a
+  normal, supported case) — fixed to fall back to `"NA"`, matching Paymob's existing defensive pattern for
+  optional billing fields.
+
+### Findings noted but not fixed this pass (documented, not silently dropped)
+
+- **The 403→404 behavior change (from the global query filter hiding a cross-branch entity before an explicit
+  guard runs) is real and consistent, but was only test-audited for the 4 `Member`-fetch cases in Phase 15.**
+  The review found the identical shape in `RefundPaymentCommandHandler`, `RefundSaleCommandHandler`, and
+  roughly a hundred other `IBranchAccessGuard`-gated handlers across Sales/Invoices/Lockers/Staff/Trainers/
+  Classes/CRM — for any entity that carries its own `BranchId` (unlike the 17 fixed above, which is why those
+  fetches never returned data cross-branch, just skipped the deny). This is the *same* deliberate,
+  arguably-more-secure change already accepted in Phase 15 (404 doesn't confirm a foreign id belongs to
+  *something*), not a new gap — but it was never confirmed test-by-test beyond the original 4. Left as a
+  documented, low-severity gap: worth a broader regression sweep asserting 404 (not a behavior fix) if this
+  matters to API consumers that distinguish 403 from 404.
+- **`Payment.GatewayReferenceId` reuse (order id → transaction id for Paymob) carries a real, narrow risk:** a
+  DB-level unique index on that column means a coincidental collision between a new order id and an old,
+  already-swapped transaction id would throw an unhandled `DbUpdateException` instead of a graceful error; and
+  a legitimate Paymob webhook redelivery addressed by order id after the swap would no longer find the
+  payment. Both are consequences of reusing one column for two different id namespaces rather than a
+  dedicated second field — the deeper fix (a distinct `SecondaryGatewayReferenceId` column) is a real schema
+  change, deliberately not made in this pass given the whole Paymob integration is already flagged as
+  unverified against a live account; tracked here rather than fixed reactively.
+- Several simplification/reuse observations (the shadow-FK line duplicated ~34 times across EF configs, three
+  near-identical `HttpClient`-owning constructors in the new gateway/SMS services, `BranchIsolationFilterFactory`'s
+  string-keyed `"BranchId"` property lookup instead of a marker interface mirroring `ISoftDeletableEntity`) are
+  real but cosmetic/structural, not correctness bugs — left as-is rather than a broad refactor this session
+  didn't set out to do.

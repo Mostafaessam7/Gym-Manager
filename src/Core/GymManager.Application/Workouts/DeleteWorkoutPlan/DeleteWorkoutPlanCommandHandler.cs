@@ -18,7 +18,9 @@ public sealed class DeleteWorkoutPlanCommandHandler(
         if (plan is null)
             return Result.Failure(WorkoutErrors.PlanNotFound);
 
-        var member = await readDb.Members.FirstOrDefaultAsync(m => m.Id == plan.MemberId, cancellationToken);
+        // IgnoreQueryFilters(): see GetMembershipsByMemberQueryHandler for why this authorization-only lookup
+        // must bypass the global branch-isolation filter.
+        var member = await readDb.Members.IgnoreQueryFilters().FirstOrDefaultAsync(m => m.Id == plan.MemberId, cancellationToken);
         if (member is not null)
         {
             var accessResult = branchAccessGuard.EnsureCanAccess(member.BranchId);

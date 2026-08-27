@@ -32,8 +32,12 @@ public sealed class CreateGatewayPaymentIntentCommandHandler(
         if (amountResult.IsFailure)
             return Result.Failure<PaymentGatewayIntentResponse>(amountResult.Error);
 
+        // Fawry's PAYATFAWRY flow is cash paid at a retail outlet, not a card — recorded as such so
+        // reporting/analytics that segments revenue by PaymentMethod doesn't misclassify it.
+        var method = command.Provider == PaymentGatewayProvider.Fawry ? PaymentMethod.Cash : PaymentMethod.Card;
+
         var payment = Payment.Create(
-            command.MemberId, command.BranchId, amountResult.Value, PaymentMethod.Card,
+            command.MemberId, command.BranchId, amountResult.Value, method,
             command.ReferenceType, command.ReferenceId, currentUserService.UserId);
 
         var intentResult = await paymentGatewayService.CreatePaymentIntentAsync(

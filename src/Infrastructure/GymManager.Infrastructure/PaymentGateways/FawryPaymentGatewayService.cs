@@ -6,6 +6,7 @@ using GymManager.Application.Abstractions;
 using GymManager.Domain.Common;
 using GymManager.Domain.Payments;
 using GymManager.Domain.Payments.Errors;
+using GymManager.SharedKernel.Primitives;
 using GymManager.SharedKernel.Results;
 
 namespace GymManager.Infrastructure.PaymentGateways;
@@ -78,7 +79,11 @@ public sealed class FawryPaymentGatewayService : IPaymentGatewayService, IDispos
             {
                 merchantCode = _options.MerchantCode,
                 merchantRefNum = merchantRefNumber,
-                customerEmail = receiptEmail,
+                // Fawry's documented examples always show a populated customerEmail; ReceiptEmail is
+                // optional throughout this app (a normal, supported call shape), so fall back rather than
+                // ever send a literal null for a field that may be required — same defensive posture as
+                // Paymob's "NA" placeholders for billing fields this app has no data for.
+                customerEmail = string.IsNullOrWhiteSpace(receiptEmail) ? "NA" : receiptEmail,
                 paymentMethod = "PAYATFAWRY",
                 amount = formattedAmount,
                 currencyCode = amount.Currency.ToUpperInvariant(),
@@ -123,13 +128,24 @@ public sealed class FawryPaymentGatewayService : IPaymentGatewayService, IDispos
     {
         try
         {
+            // FawryPay doesn't document a refund-signature field order as explicitly as it does for charge
+            // requests and notifications (see this class's own top-level remarks on the overall verification
+            // gap) — signing every field actually sent in the request body, in the same order they appear
+            // below, is the most defensible guess absent that documentation, and at minimum keeps this
+            // request internally consistent with itself (the charge/webhook signatures both sign every field
+            // they carry).
+            var refundAmountText = amount?.Amount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+            var signature = refundAmountText is null
+                ? ComputeSignature(_options.MerchantCode, gatewayReferenceId, _options.SecurityKey)
+                : ComputeSignature(_options.MerchantCode, gatewayReferenceId, refundAmountText, _options.SecurityKey);
+
             var request = new
             {
                 merchantCode = _options.MerchantCode,
                 referenceNumber = gatewayReferenceId,
-                refundAmount = amount?.Amount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture),
+                refundAmount = refundAmountText,
                 reason = "Refund requested",
-                signature = ComputeSignature(_options.MerchantCode, gatewayReferenceId, _options.SecurityKey),
+                signature,
             };
 
             using var response = await _httpClient.PostAsJsonAsync("/ECommerceWeb/Fawry/payments/refund", request, cancellationToken);
@@ -182,12 +198,10 @@ public sealed class FawryPaymentGatewayService : IPaymentGatewayService, IDispos
 
         var computedSignature = ComputeSignature(fawryRefNumber, merchantRefNumber, paymentAmount, orderStatus, paymentMethod, _options.SecurityKey);
 
-        if (!CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(computedSignature.ToUpperInvariant()),
-                Encoding.UTF8.GetBytes(signatureHeader.ToUpperInvariant())))
-        {
+        // Reuses the same constant-time comparison already shared by every other secret comparison in this
+        // codebase — see ConstantTimeComparer's own remarks (and PaymobPaymentGatewayService's identical use).
+        if (!ConstantTimeComparer.Equals(computedSignature.ToUpperInvariant(), signatureHeader.ToUpperInvariant()))
             return Result.Failure<PaymentGatewayWebhookEvent>(PaymentErrors.WebhookSignatureInvalid("signature mismatch"));
-        }
 
         var outcome = orderStatus.ToUpperInvariant() switch
         {

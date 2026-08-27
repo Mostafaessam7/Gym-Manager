@@ -263,4 +263,108 @@ public sealed class BranchIsolationTests(CustomWebApplicationFactory factory) : 
         var page = await response.Content.ReadFromJsonAsync<PagedMembers>();
         Assert.Empty(page!.Items);
     }
+
+    // The three regression tests below cover a real bug found during a code-review pass over the global
+    // branch-isolation query filter (BranchIsolationFilterFactory): several handlers resolve their target
+    // aggregate's *owning member* purely to authorize the caller (e.g. "is this membership/workout plan's
+    // member in my branch?"), via a pattern like `if (member is not null) { EnsureCanAccess(member.BranchId) }`.
+    // Once Member itself got a global query filter, a member in another branch was silently hidden from that
+    // lookup — turning "member is not null" false and skipping the guard entirely, rather than the guard
+    // correctly denying access. Fixed by making these specific lookups bypass the global filter
+    // (IMemberRepository.GetBranchIdForAuthorizationAsync, or IgnoreQueryFilters() on the equivalent readDb
+    // query) so the guard actually runs against the real branch. See PROJECT_STATUS.md for the full list of
+    // ~17 affected handlers (Memberships freeze/unfreeze/cancel/renew, Workouts, Nutrition).
+
+    private sealed record PlanResponse(Guid Id);
+
+    private sealed record MembershipResponse(Guid Id);
+
+    private sealed record WorkoutPlanResponse(Guid Id);
+
+    [Fact]
+    public async Task FreezeMembership_For_Another_Branchs_Member_Should_Return_Forbidden()
+    {
+        var hqClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, Permissions.Branches.Manage, Permissions.Members.Create, Permissions.Memberships.Manage);
+
+        var otherBranchId = await CreateBranchAsync(hqClient);
+        var memberResponse = await hqClient.PostAsJsonAsync("/api/v1/members", MemberRequest(otherBranchId));
+        var member = await memberResponse.Content.ReadFromJsonAsync<MemberResponse>();
+
+        var planResponse = await hqClient.PostAsJsonAsync("/api/v1/membership-plans", new
+        {
+            name = $"Plan-{Guid.NewGuid():N}", description = "Test plan", price = 49.99m, currency = "USD",
+            durationInDays = 30, maxFreezeDays = 7, branchId = (Guid?)null,
+        });
+        var plan = await planResponse.Content.ReadFromJsonAsync<PlanResponse>();
+
+        var membershipResponse = await hqClient.PostAsJsonAsync("/api/v1/memberships", new
+        {
+            memberId = member!.Id, membershipPlanId = plan!.Id, startDate = DateOnly.FromDateTime(DateTime.UtcNow),
+        });
+        var membership = await membershipResponse.Content.ReadFromJsonAsync<MembershipResponse>();
+
+        var scopedClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, branchId: Guid.NewGuid(), Permissions.Memberships.Manage);
+
+        var response = await scopedClient.PostAsync($"/api/v1/memberships/{membership!.Id}/freeze", content: null);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CancelMembership_For_Another_Branchs_Member_Should_Return_Forbidden()
+    {
+        var hqClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, Permissions.Branches.Manage, Permissions.Members.Create, Permissions.Memberships.Manage);
+
+        var otherBranchId = await CreateBranchAsync(hqClient);
+        var memberResponse = await hqClient.PostAsJsonAsync("/api/v1/members", MemberRequest(otherBranchId));
+        var member = await memberResponse.Content.ReadFromJsonAsync<MemberResponse>();
+
+        var planResponse = await hqClient.PostAsJsonAsync("/api/v1/membership-plans", new
+        {
+            name = $"Plan-{Guid.NewGuid():N}", description = "Test plan", price = 49.99m, currency = "USD",
+            durationInDays = 30, maxFreezeDays = 7, branchId = (Guid?)null,
+        });
+        var plan = await planResponse.Content.ReadFromJsonAsync<PlanResponse>();
+
+        var membershipResponse = await hqClient.PostAsJsonAsync("/api/v1/memberships", new
+        {
+            memberId = member!.Id, membershipPlanId = plan!.Id, startDate = DateOnly.FromDateTime(DateTime.UtcNow),
+        });
+        var membership = await membershipResponse.Content.ReadFromJsonAsync<MembershipResponse>();
+
+        var scopedClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, branchId: Guid.NewGuid(), Permissions.Memberships.Manage);
+
+        var response = await scopedClient.PostAsync($"/api/v1/memberships/{membership!.Id}/cancel", content: null);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetWorkoutPlanById_For_Another_Branchs_Member_Should_Return_Forbidden()
+    {
+        var hqClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, Permissions.Branches.Manage, Permissions.Members.Create, Permissions.Workouts.Manage);
+
+        var otherBranchId = await CreateBranchAsync(hqClient);
+        var memberResponse = await hqClient.PostAsJsonAsync("/api/v1/members", MemberRequest(otherBranchId));
+        var member = await memberResponse.Content.ReadFromJsonAsync<MemberResponse>();
+
+        var planResponse = await hqClient.PostAsJsonAsync("/api/v1/workout-plans", new
+        {
+            memberId = member!.Id, trainerId = (Guid?)null, name = "Test Plan", description = (string?)null,
+            exercises = Array.Empty<object>(),
+        });
+        var plan = await planResponse.Content.ReadFromJsonAsync<WorkoutPlanResponse>();
+
+        var scopedClient = await TestAuthHelper.CreateAuthorizedClientAsync(
+            factory, branchId: Guid.NewGuid(), Permissions.Workouts.View);
+
+        var response = await scopedClient.GetAsync($"/api/v1/workout-plans/{plan!.Id}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
 }

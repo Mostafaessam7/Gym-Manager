@@ -11,6 +11,12 @@ internal sealed class MemberRepository(GymManagerDbContext dbContext) : IMemberR
     public Task<Member?> GetByCheckInCodeAsync(string checkInCode, CancellationToken cancellationToken = default) =>
         dbContext.Members.FirstOrDefaultAsync(m => m.CheckInCode == checkInCode, cancellationToken);
 
+    public Task<Guid?> GetBranchIdForAuthorizationAsync(Guid memberId, CancellationToken cancellationToken = default) =>
+        dbContext.Members.IgnoreQueryFilters()
+            .Where(m => m.Id == memberId)
+            .Select(m => (Guid?)m.BranchId)
+            .FirstOrDefaultAsync(cancellationToken);
+
     public Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default) =>
         dbContext.Members.AnyAsync(m => m.Email != null && m.Email.Value == email, cancellationToken);
 

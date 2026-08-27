@@ -24,10 +24,10 @@ public sealed class RenewMembershipCommandHandler(
         if (membership is null)
             return Result.Failure<MembershipResponse>(MembershipErrors.NotFound);
 
-        var member = await memberRepository.GetByIdAsync(membership.MemberId, cancellationToken);
-        if (member is not null)
+        var memberBranchId = await memberRepository.GetBranchIdForAuthorizationAsync(membership.MemberId, cancellationToken);
+        if (memberBranchId is not null)
         {
-            var accessResult = branchAccessGuard.EnsureCanAccess(member.BranchId);
+            var accessResult = branchAccessGuard.EnsureCanAccess(memberBranchId.Value);
             if (accessResult.IsFailure)
                 return Result.Failure<MembershipResponse>(accessResult.Error);
         }

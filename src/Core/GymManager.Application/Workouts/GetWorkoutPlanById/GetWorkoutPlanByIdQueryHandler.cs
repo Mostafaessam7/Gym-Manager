@@ -16,7 +16,10 @@ public sealed class GetWorkoutPlanByIdQueryHandler(IApplicationReadDb readDb, IB
         if (plan is null)
             return Result.Failure<WorkoutPlanResponse>(WorkoutErrors.PlanNotFound);
 
-        var member = await readDb.Members.FirstOrDefaultAsync(m => m.Id == plan.MemberId, cancellationToken);
+        // IgnoreQueryFilters(): this lookup only resolves the owning member's branch to authorize the caller
+        // against it — see GetMembershipsByMemberQueryHandler for why the global branch-isolation filter
+        // would otherwise turn this into a silent cross-branch data leak.
+        var member = await readDb.Members.IgnoreQueryFilters().FirstOrDefaultAsync(m => m.Id == plan.MemberId, cancellationToken);
         if (member is not null)
         {
             var accessResult = branchAccessGuard.EnsureCanAccess(member.BranchId);

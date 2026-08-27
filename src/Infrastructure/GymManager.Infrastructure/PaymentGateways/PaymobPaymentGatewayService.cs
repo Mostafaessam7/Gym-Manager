@@ -7,6 +7,7 @@ using GymManager.Application.Abstractions;
 using GymManager.Domain.Common;
 using GymManager.Domain.Payments;
 using GymManager.Domain.Payments.Errors;
+using GymManager.SharedKernel.Primitives;
 using GymManager.SharedKernel.Results;
 
 namespace GymManager.Infrastructure.PaymentGateways;
@@ -165,12 +166,11 @@ public sealed class PaymobPaymentGatewayService : IPaymentGatewayService, IDispo
         var computedHmac = Convert.ToHexString(
             HMACSHA512.HashData(Encoding.UTF8.GetBytes(_options.HmacSecret), Encoding.UTF8.GetBytes(concatenated)));
 
-        if (!CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(computedHmac.ToUpperInvariant()),
-                Encoding.UTF8.GetBytes(signatureHeader.ToUpperInvariant())))
-        {
+        // Reuses the same constant-time comparison already shared by every other secret comparison in this
+        // codebase (User's token-hash checks, TotpTwoFactorService) rather than a third independently-written
+        // one — see ConstantTimeComparer's own remarks.
+        if (!ConstantTimeComparer.Equals(computedHmac.ToUpperInvariant(), signatureHeader.ToUpperInvariant()))
             return Result.Failure<PaymentGatewayWebhookEvent>(PaymentErrors.WebhookSignatureInvalid("hmac mismatch"));
-        }
 
         var success = obj.TryGetProperty("success", out var successProp) && successProp.GetBoolean();
         var pending = obj.TryGetProperty("pending", out var pendingProp) && pendingProp.GetBoolean();
@@ -182,7 +182,10 @@ public sealed class PaymobPaymentGatewayService : IPaymentGatewayService, IDispo
             _ => PaymentGatewayEventOutcome.Other,
         };
 
-        var transactionId = Field("id");
+        // Null (not empty string) when the payload is missing "id" — HandlePaymobWebhookCommandHandler checks
+        // SecondaryReferenceId for null before overwriting the stored GatewayReferenceId, so an empty string
+        // here would defeat that guard and could wipe the reference to a real, refundable transaction id.
+        var transactionId = Field("id") is { Length: > 0 } id ? id : null;
 
         return Result.Success(new PaymentGatewayWebhookEvent(orderId, outcome, "TRANSACTION", transactionId));
     }
