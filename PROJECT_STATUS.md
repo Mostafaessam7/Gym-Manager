@@ -9,7 +9,8 @@ carried over from prior notes._
 
 - **Build:** `dotnet build GymManager.slnx -c Release` — succeeds, 0 warnings, 0 errors.
 - **Tests:** `dotnet test GymManager.slnx -c Release` —
-  **Architecture 9/9, Unit 233/233, Integration 175/175 — all passing, zero skips.**
+  **Architecture 11/11, Unit 233/233, Integration 175/175 — all passing, zero skips.**
+  (Architecture went 9 → 11 on 2026-08-28 with the branch-isolation convention test and its self-test.)
   Integration tests run against EF Core's InMemory provider (see `CustomWebApplicationFactory`); no live
   database is required to run the suite.
 - **Git:** real commit history (`0b97e4b` initial commit through `9492a66`, 11 commits), working tree clean,
@@ -58,8 +59,22 @@ carried over from prior notes._
   per-handler via `IBranchAccessGuard`. History in this project shows that convention has been forgotten by
   new handlers more than once (found and fixed twice: a 16-handler gap and, later, a 17-handler regression
   introduced by a partial global-filter fix for `Member`). Any *new* handler touching a branch-scoped
-  aggregate must remember to call the guard explicitly — nothing in the codebase currently enforces this
-  automatically (an architecture test for this convention does not yet exist).
+  aggregate must remember to call the guard explicitly.
+
+  **Update (2026-08-28): the specific shape that caused both regressions is now caught automatically.**
+  `tests/GymManager.ArchitectureTests/BranchIsolationConventionTests.cs` scans the Application layer's
+  source for an authorization-only member lookup that runs *through* the global branch filter and then
+  guards on `if (member is not null)`. That combination is the hole: the filter hides a cross-branch
+  member, the lookup returns `null`, and the null-check skips `EnsureCanAccess` entirely instead of
+  denying access. It requires `.IgnoreQueryFilters()` (or `GetBranchIdForAuthorizationAsync`) on such
+  lookups, and reports the offending file and line.
+
+  Deliberately narrow: a filtered lookup whose `null` path *returns* (`if (member is null) return
+  Failure(NotFound)`) is not flagged — access is still denied there, the filter just turns a 403 into a
+  404. It also can't prove a brand-new handler remembered the guard at all; it closes the specific,
+  twice-shipped hole rather than the whole convention. Verified by reintroducing the bug into a real
+  handler and confirming the test fails naming that file and line, and by a self-test that pins the
+  detector against the vulnerable, fixed, and safe-early-return shapes so it can't silently stop matching.
 - **Cross-aggregate references are index-only, not real foreign keys, almost everywhere.** A handful of
   relationships (Lead→Branch/User, StaffShift→User/Branch, Commission→User, and later a further batch) were
   given real DB-level FKs; the rest of the schema (the majority of cross-aggregate references) remains

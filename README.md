@@ -218,6 +218,8 @@ Development. All endpoints are versioned (`/api/v1/...`) and require a bearer to
 See `PROJECT_STATUS.md` for the full, current list. In short: Paymob/Fawry and Twilio SMS are implemented
 and self-tested but unverified against a real merchant/Twilio account; no load/performance testing has been
 done; branch (multi-tenant) data isolation is enforced per-handler rather than by a global data-access
-filter, so any new handler touching a branch-scoped aggregate must explicitly call `IBranchAccessGuard`;
+filter, so any new handler touching a branch-scoped aggregate must explicitly call `IBranchAccessGuard`
+(an architecture test now catches the one bypass shape that shipped twice, but not a forgotten guard in
+general — see `PROJECT_STATUS.md`);
 most cross-aggregate references are application-enforced only (no DB-level foreign key); and API error-message
 localization (English/Spanish/Arabic) covers the most common error codes, not the full catalog.
