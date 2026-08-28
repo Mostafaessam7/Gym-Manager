@@ -11,14 +11,30 @@ export class ApiError extends Error {
 
 let refreshPromise = null;
 
+// The CSRF token is the one cookie meant to be script-readable: the server sets it non-HttpOnly and
+// the client echoes it back in a header. An attacker's page can make the browser send cookies
+// cross-origin but cannot read them, so it cannot produce the matching header.
+function getCsrfToken() {
+  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 async function refreshAccessToken() {
-  const session = authStore.session;
-  if (!session?.refreshToken) throw new ApiError('No refresh token available', 401);
+  // There is no readable refresh token to check for any more — it lives in an HttpOnly cookie.
+  // Attempt the refresh and let failure mean "no session", which callers already handle.
+  const csrf = getCsrfToken();
 
   const response = await fetch(`${CONFIG.API_BASE_URL}/auth/refresh`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken: session.refreshToken }),
+    // Required for the browser to send and accept the cookie. Without it the cookie is silently
+    // ignored and every refresh fails with no obvious cause.
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Auth-Transport': 'cookie',
+      ...(csrf ? { 'X-XSRF-TOKEN': csrf } : {}),
+    },
+    body: JSON.stringify({}),
   });
 
   if (!response.ok) {
@@ -62,11 +78,18 @@ async function request(method, path, { query, body, isForm, retry = true, expect
 
   const response = await fetch(buildUrl(path, query), {
     method,
+    // Sends the auth cookies on same-site and cross-origin calls alike. Ordinary API calls carry
+    // the access token in the Authorization header as before; this matters for the auth endpoints,
+    // where the refresh cookie has to travel.
+    credentials: 'include',
     headers,
     body: isForm ? body : body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-  if (response.status === 401 && retry && authStore.session?.refreshToken) {
+  // Retry on 401 whenever the app believes it has a session. The refresh token is no longer
+  // readable, so its presence cannot be checked first — the refresh attempt itself is the check,
+  // and its failure lands in the catch below.
+  if (response.status === 401 && retry && authStore.hasStoredProfile) {
     try {
       await (refreshPromise ??= refreshAccessToken().finally(() => (refreshPromise = null)));
       return request(method, path, { query, body, isForm, retry: false, expectBlob });
@@ -102,5 +125,21 @@ export const api = {
   put: (path, body) => request('PUT', path, { body }),
   delete: (path) => request('DELETE', path, {}),
 };
+
+/**
+ * Re-establishes the session after a page reload, where the in-memory access token is gone but the
+ * HttpOnly refresh cookie survives.
+ *
+ * Resolves to true/false rather than throwing: "no valid cookie" is the ordinary logged-out case,
+ * not an error worth blocking app startup over.
+ */
+export async function restoreSession() {
+  try {
+    await refreshAccessToken();
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export { toSession };

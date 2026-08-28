@@ -4,6 +4,8 @@ using GymManager.Api.Extensions;
 using GymManager.Application.Identity.ChangePassword;
 using GymManager.Application.Identity.Login;
 using GymManager.Application.Identity.Logout;
+using GymManager.Api.Auth;
+using GymManager.Application.Identity.Contracts;
 using GymManager.Application.Identity.RefreshAccessToken;
 using GymManager.Application.Identity.Register;
 using GymManager.Application.Identity.RequestPasswordReset;
@@ -29,8 +31,75 @@ namespace GymManager.Api.Controllers.V1;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/auth")]
-public sealed class AuthController(IDispatcher dispatcher) : ControllerBase
+public sealed class AuthController(IDispatcher dispatcher, IWebHostEnvironment environment) : ControllerBase
 {
+    /// <summary>
+    /// For a cookie-transport caller, moves the refresh token out of the JSON body and into an
+    /// HttpOnly cookie. Returning it in both places would leave it readable by any script on the
+    /// page and make the change cosmetic.
+    /// </summary>
+    private IActionResult RespondWithSession(AuthenticationResponse authentication)
+    {
+        if (!WebAuthCookies.UsesCookieTransport(Request))
+        {
+            return Ok(authentication);
+        }
+
+        WebAuthCookies.Issue(Response, authentication.RefreshToken, environment.IsDevelopment());
+
+        return Ok(authentication with { RefreshToken = string.Empty });
+    }
+
+    /// <summary>
+    /// Login has two shapes: a completed sign-in carrying tokens, or a 2FA challenge carrying none.
+    /// Only the first establishes a session, so only that one issues cookies — a challenge token is
+    /// not a credential and must stay in the body for the client to present to the 2FA endpoint.
+    /// </summary>
+    private IActionResult RespondWithLogin(LoginResponse login)
+    {
+        if (login.Authentication is null)
+        {
+            return Ok(login);
+        }
+
+        if (!WebAuthCookies.UsesCookieTransport(Request))
+        {
+            return Ok(login);
+        }
+
+        WebAuthCookies.Issue(Response, login.Authentication.RefreshToken, environment.IsDevelopment());
+
+        return Ok(login with
+        {
+            Authentication = login.Authentication with { RefreshToken = string.Empty },
+        });
+    }
+
+    /// <summary>
+    /// Resolves which refresh token to act on. A cookie-carried token is honoured only when the
+    /// double-submit CSRF check passes: the browser attaches the cookie automatically, so without
+    /// this a third-party page could trigger a refresh or logout on the user's behalf.
+    /// </summary>
+    private (string? Token, IActionResult? Failure) ResolveRefreshToken(RefreshTokenRequest request)
+    {
+        var cookieToken = Request.Cookies[WebAuthCookies.RefreshTokenCookieName];
+
+        if (!string.IsNullOrEmpty(cookieToken))
+        {
+            if (!WebAuthCookies.HasValidCsrfToken(Request))
+            {
+                return (null, Problem(
+                    title: "CSRF validation failed",
+                    detail: "A request carrying the refresh cookie must also send a matching X-XSRF-TOKEN header.",
+                    statusCode: StatusCodes.Status403Forbidden));
+            }
+
+            return (cookieToken, null);
+        }
+
+        return (request.RefreshToken, null);
+    }
+
     public sealed record RegisterRequest(string Email, string Password, string FirstName, string LastName, Guid? BranchId);
 
     public sealed record LoginRequest(string Email, string Password);
@@ -72,24 +141,56 @@ public sealed class AuthController(IDispatcher dispatcher) : ControllerBase
         var command = new LoginCommand(request.Email, request.Password, ClientIpAddress, ClientUserAgent);
         var result = await dispatcher.Send(command, cancellationToken);
 
-        return result.IsSuccess ? Ok(result.Value) : result.ToProblemDetails();
+        return result.IsSuccess ? RespondWithLogin(result.Value) : result.ToProblemDetails();
     }
 
     [HttpPost("refresh")]
     [AllowAnonymous]
     public async Task<IActionResult> Refresh(RefreshTokenRequest request, CancellationToken cancellationToken)
     {
-        var command = new RefreshAccessTokenCommand(request.RefreshToken, ClientIpAddress, ClientUserAgent);
+        var (token, failure) = ResolveRefreshToken(request);
+        if (failure is not null)
+        {
+            return failure;
+        }
+
+        var command = new RefreshAccessTokenCommand(token ?? string.Empty, ClientIpAddress, ClientUserAgent);
         var result = await dispatcher.Send(command, cancellationToken);
 
-        return result.IsSuccess ? Ok(result.Value) : result.ToProblemDetails();
+        if (!result.IsSuccess)
+        {
+            // Clear the cookie on a rejected refresh so an expired or revoked token does not sit in
+            // the browser making every subsequent request retry and fail.
+            if (WebAuthCookies.UsesCookieTransport(Request))
+            {
+                WebAuthCookies.Clear(Response, environment.IsDevelopment());
+            }
+
+            return result.ToProblemDetails();
+        }
+
+        return RespondWithSession(result.Value);
     }
 
     [HttpPost("logout")]
     [AllowAnonymous]
     public async Task<IActionResult> Logout(RefreshTokenRequest request, CancellationToken cancellationToken)
     {
-        await dispatcher.Send(new LogoutCommand(request.RefreshToken), cancellationToken);
+        var (token, failure) = ResolveRefreshToken(request);
+        if (failure is not null)
+        {
+            return failure;
+        }
+
+        await dispatcher.Send(new LogoutCommand(token ?? string.Empty), cancellationToken);
+
+        // Cleared unconditionally for cookie callers: even if the server-side revoke failed, the
+        // browser must stop holding a credential the user has asked to give up.
+        if (WebAuthCookies.UsesCookieTransport(Request))
+        {
+            WebAuthCookies.Clear(Response, environment.IsDevelopment());
+        }
+
         return NoContent();
     }
 
@@ -177,7 +278,7 @@ public sealed class AuthController(IDispatcher dispatcher) : ControllerBase
         var command = new CompleteTwoFactorLoginCommand(request.ChallengeToken, request.Code, ClientIpAddress, ClientUserAgent);
         var result = await dispatcher.Send(command, cancellationToken);
 
-        return result.IsSuccess ? Ok(result.Value) : result.ToProblemDetails();
+        return result.IsSuccess ? RespondWithSession(result.Value) : result.ToProblemDetails();
     }
 
     [HttpPost("2fa/setup")]

@@ -43,7 +43,14 @@ form.addEventListener('submit', async (event) => {
   try {
     const response = await fetch(`${CONFIG.API_BASE_URL}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      // Opts into cookie transport: the server puts the refresh token in an HttpOnly cookie and
+      // leaves it out of the response body. credentials:'include' is what lets the browser accept
+      // that cookie at all.
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Auth-Transport': 'cookie',
+      },
       body: JSON.stringify({ email, password }),
     });
 

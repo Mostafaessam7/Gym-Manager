@@ -1,12 +1,31 @@
 import { authStore } from './auth/authStore.js';
+import { api, restoreSession } from './api/apiClient.js';
 import { CONFIG } from './config.js';
 import { registerRoute, setNotFoundHandler, startRouter, navigate, currentPath } from './router.js';
 import { t, initI18n, getLocale, toggleLocale } from './i18n/index.js';
 
 initI18n();
 
+// The access token now lives in memory, so it is gone after every reload while the HttpOnly refresh
+// cookie survives. Without this, an ordinary F5 would bounce the user to the login page despite a
+// perfectly valid session.
+//
+// hasStoredProfile is the cheap first check: it means "this browser was signed in", so a silent
+// refresh is worth attempting. With no stored profile there is nothing to restore and the redirect
+// happens immediately, exactly as before.
 if (!authStore.isAuthenticated) {
-  window.location.href = 'index.html';
+  if (!authStore.hasStoredProfile) {
+    window.location.href = 'index.html';
+  } else {
+    // Awaited before the app renders, so route guards see the restored session rather than racing
+    // it. A failure here means the cookie is gone or expired, which is an ordinary logged-out state.
+    const restored = await restoreSession();
+
+    if (!restored) {
+      authStore.clear();
+      window.location.href = 'index.html';
+    }
+  }
 }
 
 const NAV_ITEMS = [
@@ -64,7 +83,17 @@ function initUserChip() {
 
   const logoutBtn = document.getElementById('logout-btn');
   logoutBtn.textContent = t('topbar.logout');
-  logoutBtn.addEventListener('click', () => {
+  logoutBtn.addEventListener('click', async () => {
+    // The HttpOnly cookie cannot be cleared from JavaScript — only the server can. Without this
+    // call the user would appear signed out while a valid refresh cookie stayed in the browser.
+    // Best-effort: local state is cleared regardless, so a network failure still signs them out
+    // here rather than trapping them in a half-logged-in state.
+    try {
+      await api.post('/auth/logout', {});
+    } catch {
+      /* revoke is best-effort; local sign-out proceeds either way */
+    }
+
     authStore.clear();
     window.location.href = 'index.html';
   });
