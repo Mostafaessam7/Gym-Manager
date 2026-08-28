@@ -22,7 +22,9 @@
       } catch { /* localStorage unavailable (e.g. blocked) — fall back to the OS-level media query / English */ }
     })();
   </script>
-  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="design-system/tokens.css" />
+    <link rel="stylesheet" href="design-system/themes/slate-pro.css" />
+    <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/rtl.css" />
   <style>
@@ -65,7 +67,7 @@
       width: 40px;
       height: 40px;
       border-radius: var(--radius-md);
-      background: linear-gradient(135deg, var(--color-primary), #7c3aed);
+      background: linear-gradient(135deg, var(--mx-accent), var(--mx-accent-alt));
       color: #fff;
       display: flex;
       align-items: center;
@@ -105,13 +107,30 @@
       color: var(--color-text);
     }
 
+    /* layout.css is not loaded on this page, so .icon-btn had no background and
+       themed text rendered on the browser default (measured 1.16:1). */
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
     .login-submit {
       width: 100%;
       padding: 11px;
       border-radius: var(--radius-sm);
       border: none;
       background: var(--color-primary);
-      color: #fff;
+      /* was #fff, which measured 3.44:1 on the slate accent. --mx-text-on-accent
+         is defined per mode to pair with whatever the accent currently is. */
+      color: var(--mx-text-on-accent);
       font-weight: 700;
       cursor: pointer;
       margin-top: var(--spacing-2);

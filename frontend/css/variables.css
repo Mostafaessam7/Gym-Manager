@@ -1,26 +1,28 @@
 :root {
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
-  --color-primary-light: #eef2ff;
-  --color-primary-rgb: 79, 70, 229;
-  --color-accent: #7c3aed;
+  --color-primary: var(--mx-accent);
+  --color-primary-hover: var(--mx-accent-hover);
+  --color-primary-light: var(--mx-accent-subtle);
+  /* --color-primary-rgb removed: its only consumers were rgba() shadows, which now
+     use --mx-shadow-md/-lg and --mx-focus-ring. A bare RGB triplet cannot alias to
+     a themed colour, so keeping it would have stranded an indigo in a slate theme. */
+  --color-accent: var(--mx-accent-alt);
 
-  --color-success: #16a34a;
-  --color-success-light: #dcfce7;
-  --color-warning: #d97706;
-  --color-warning-light: #fef3c7;
-  --color-danger: #dc2626;
-  --color-danger-light: #fee2e2;
-  --color-info: #0891b2;
-  --color-info-light: #cffafe;
+  --color-success: var(--mx-success);
+  --color-success-light: var(--mx-success-subtle);
+  --color-warning: var(--mx-warning);
+  --color-warning-light: var(--mx-warning-subtle);
+  --color-danger: var(--mx-danger);
+  --color-danger-light: var(--mx-danger-subtle);
+  --color-info: var(--mx-info);
+  --color-info-light: var(--mx-info-subtle);
 
-  --color-bg: #f4f5f7;
-  --color-surface: #ffffff;
-  --color-surface-alt: #f9fafb;
-  --color-border: #e5e7eb;
-  --color-text: #111827;
-  --color-text-muted: #6b7280;
-  --color-text-inverse: #ffffff;
+  --color-bg: var(--mx-surface-base);
+  --color-surface: var(--mx-surface);
+  --color-surface-alt: var(--mx-surface-sunk);
+  --color-border: var(--mx-border);
+  --color-text: var(--mx-text);
+  --color-text-muted: var(--mx-text-muted);
+  --color-text-inverse: var(--mx-text-on-accent);
 
   --sidebar-bg: #111827;
   --sidebar-bg-alt: #0d121f;
@@ -36,7 +38,7 @@
   --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.05), 0 1px 1px rgba(17, 24, 39, 0.04);
   --shadow-md: 0 6px 16px rgba(17, 24, 39, 0.08), 0 2px 4px rgba(17, 24, 39, 0.04);
   --shadow-lg: 0 20px 40px rgba(17, 24, 39, 0.16), 0 4px 10px rgba(17, 24, 39, 0.06);
-  --shadow-focus: 0 0 0 3px rgba(var(--color-primary-rgb), 0.16);
+  --shadow-focus: var(--mx-focus-ring);
 
   --spacing-1: 4px;
   --spacing-2: 8px;
@@ -52,39 +54,39 @@
 }
 
 :root[data-theme="dark"] {
-  --color-bg: #0f1115;
-  --color-surface: #171a21;
-  --color-surface-alt: #1e222b;
-  --color-border: #2a2f3a;
-  --color-text: #e5e7eb;
-  --color-text-muted: #9ca3af;
+  --color-bg: var(--mx-surface-base);
+  --color-surface: var(--mx-surface);
+  --color-surface-alt: var(--mx-surface-sunk);
+  --color-border: var(--mx-border);
+  --color-text: var(--mx-text);
+  --color-text-muted: var(--mx-text-muted);
 
   --sidebar-bg: #0b0d12;
   --sidebar-active-bg: rgba(99, 102, 241, 0.25);
 
-  --color-primary-light: rgba(79, 70, 229, 0.18);
-  --color-success-light: rgba(22, 163, 74, 0.18);
-  --color-warning-light: rgba(217, 119, 6, 0.18);
-  --color-danger-light: rgba(220, 38, 38, 0.18);
-  --color-info-light: rgba(8, 145, 178, 0.18);
+  --color-primary-light: var(--mx-accent-subtle);
+  --color-success-light: var(--mx-success-subtle);
+  --color-warning-light: var(--mx-warning-subtle);
+  --color-danger-light: var(--mx-danger-subtle);
+  --color-info-light: var(--mx-info-subtle);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-bg: #0f1115;
-    --color-surface: #171a21;
-    --color-surface-alt: #1e222b;
-    --color-border: #2a2f3a;
-    --color-text: #e5e7eb;
-    --color-text-muted: #9ca3af;
+    --color-bg: var(--mx-surface-base);
+    --color-surface: var(--mx-surface);
+    --color-surface-alt: var(--mx-surface-sunk);
+    --color-border: var(--mx-border);
+    --color-text: var(--mx-text);
+    --color-text-muted: var(--mx-text-muted);
 
     --sidebar-bg: #0b0d12;
     --sidebar-active-bg: rgba(99, 102, 241, 0.25);
 
-    --color-primary-light: rgba(79, 70, 229, 0.18);
-    --color-success-light: rgba(22, 163, 74, 0.18);
-    --color-warning-light: rgba(217, 119, 6, 0.18);
-    --color-danger-light: rgba(220, 38, 38, 0.18);
-    --color-info-light: rgba(8, 145, 178, 0.18);
+    --color-primary-light: var(--mx-accent-subtle);
+    --color-success-light: var(--mx-success-subtle);
+    --color-warning-light: var(--mx-warning-subtle);
+    --color-danger-light: var(--mx-danger-subtle);
+    --color-info-light: var(--mx-info-subtle);
   }
 }
