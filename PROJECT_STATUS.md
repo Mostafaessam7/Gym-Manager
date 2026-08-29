@@ -192,3 +192,34 @@ Every one of the "resolved" items above was corroborated during this review by r
 code, not just trusted from prior notes — see "Current, verified state" above for what was actually
 re-checked (build, full test run, controller/migration/module counts, CI file, Docker files, i18n file
 sizes, favicon wiring).
+
+## Redis (2026-08-29)
+
+`ICacheService` now has two implementations, chosen by configuration:
+
+| `ConnectionStrings:Redis` | Implementation | Where |
+|---|---|---|
+| set | `RedisCacheService` | production / multi-instance |
+| unset | `MemoryCacheService` (unchanged) | local dev, CI, tests |
+
+**Why it mattered.** `MemoryCacheService` is per-process. On a single instance that is correct and
+cheaper. On more than one, invalidation stops crossing instances: a branch or plan edit clears the
+cache on the instance that handled the write, and every other instance keeps serving its own stale
+copy until expiry. Nothing errors — the same request just returns different answers depending on
+which instance replies.
+
+**Why `StackExchange.Redis` directly and not `IDistributedCache`.** `RemoveByPrefix` has to
+enumerate keys, and `IDistributedCache` has no such API. The in-memory implementation works around
+that with a local dictionary of keys, which would put us straight back to per-process behaviour for
+exactly the invalidation that matters most — plan and trainer caches fan out over branch ids and are
+cleared by prefix. The Redis implementation uses `SCAN` (via `server.Keys`), not `KEYS`, because
+`KEYS` blocks the server for the whole scan.
+
+**Covered by tests against a real Redis** (`tests/GymManager.IntegrationTests/Caching/`). They skip
+themselves when nothing is listening on `localhost:6379`, so CI stays green — an honest trade,
+since it means the Redis path is only truly covered on a machine running Redis. Verified locally
+against a live server (3 ran, 0 skipped), and `RemoveByPrefix` was confirmed to fail the suite when
+its deletion is removed.
+
+**Still needed from you:** point `ConnectionStrings:Redis` at a real server before running more than
+one instance. Until then the memory implementation is used and behaviour is unchanged.

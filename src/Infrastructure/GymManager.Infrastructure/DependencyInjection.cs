@@ -36,6 +36,7 @@ using GymManager.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace GymManager.Infrastructure;
 
@@ -142,8 +143,35 @@ public static class DependencyInjection
 
         services.AddSingleton<IReportExporter, ReportExporter>();
 
+        // Cache backing store. Redis when ConnectionStrings:Redis is set, per-process memory
+        // otherwise.
+        //
+        // The memory fallback is deliberate: requiring Redis unconditionally would mean local
+        // development, CI and the whole test suite need a Redis server running, and the realistic
+        // outcome of that is someone disabling caching instead. Both sit behind ICacheService, so
+        // no caller changes - only the store does.
+        //
+        // They are NOT equivalent once more than one instance runs, which is the reason to
+        // configure Redis. With per-process memory, a branch or plan edit invalidates the cache on
+        // the instance that handled the write and leaves the others serving stale data until
+        // expiry. Nothing errors - answers just differ by which instance replied.
         services.AddMemoryCache();
-        services.AddSingleton<ICacheService, MemoryCacheService>();
+
+        var redisConnectionString = configuration.GetConnectionString("Redis");
+
+        if (!string.IsNullOrWhiteSpace(redisConnectionString))
+        {
+            services.AddSingleton<IConnectionMultiplexer>(
+                _ => ConnectionMultiplexer.Connect(redisConnectionString));
+
+            // Keyspace prefix so several apps can share one Redis without colliding.
+            services.AddSingleton<ICacheService>(
+                sp => new RedisCacheService(sp.GetRequiredService<IConnectionMultiplexer>(), "gymmanager:"));
+        }
+        else
+        {
+            services.AddSingleton<ICacheService, MemoryCacheService>();
+        }
 
         var fileStorageOptions = configuration.GetSection(FileStorageOptions.SectionName).Get<FileStorageOptions>()
             ?? throw new InvalidOperationException("FileStorage configuration section is missing.");
