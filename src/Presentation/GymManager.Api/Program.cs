@@ -14,6 +14,24 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Optional Azure Key Vault integration. Set KeyVault__Uri to pull secrets from a vault instead of
+// (or on top of) environment variables. Off by default, so nothing changes for anyone not using
+// Azure - and deliberately registered before SecretsValidator runs, so a value supplied by the
+// vault counts as configured rather than tripping the placeholder check.
+//
+// DefaultAzureCredential resolves a managed identity in Azure, or `az login` locally.
+//
+// Key Vault secret names cannot contain ':', so they use '--' instead: a secret named
+// "Jwt--SecretKey" maps onto the Jwt:SecretKey configuration entry.
+var keyVaultUri = builder.Configuration["KeyVault:Uri"];
+
+if (!string.IsNullOrWhiteSpace(keyVaultUri))
+{
+    builder.Configuration.AddAzureKeyVault(
+        new Uri(keyVaultUri),
+        new Azure.Identity.DefaultAzureCredential());
+}
+
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services)
