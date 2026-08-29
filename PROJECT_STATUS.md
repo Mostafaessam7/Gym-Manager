@@ -124,6 +124,45 @@ tests/
   GymManager.IntegrationTests               Full-pipeline HTTP tests via WebApplicationFactory.
 ```
 
+
+## Decisions adopted (workspace-level)
+
+| Decision | What it means here |
+|---|---|
+| **Azure** is the primary deployment target | Not wired yet |
+| **Azure Key Vault** for production secrets | Not wired yet. Today: env vars + placeholder detection that refuses to start outside Development |
+| **Redis** belongs here | One of the three products scoped for it (with PosFlow and RealEstateCRM). **Not yet added** |
+| **App Insights (backend) + Sentry (frontend)** | Not installed yet |
+| **Slate Professional theme** | This product's identity on the shared `MeCodex/design-system` token architecture |
+| **Angular Material not applicable** | The frontend is vanilla ES modules, not Angular. It consumes the shared token CSS directly |
+
+## Recent work (2026-08-29 pass)
+
+Undocumented anywhere until this cleanup, despite being the five most recent commits:
+
+- **Refresh token moved into an HttpOnly cookie, with CSRF double-submit protection.** The access
+  token stays in memory behind an `Authorization` header. See the README's "How the two tokens are
+  held" for why the two differ.
+- **`AllowCredentials()` added to the CORS policy.** This is the part worth remembering: the cookie
+  migration made the browser send credentials, but CORS never allowed them, so the browser
+  discarded every auth response before the app saw it and **login was broken**. All 425 server-side
+  tests passed throughout — the rule is enforced by the browser, not the server, so no server-side
+  test could catch it. It surfaced only because a sibling project's Playwright suite drove a real
+  browser.
+- **Shared design system, Slate Professional theme.**
+- **An architecture test that catches the branch-isolation bypass which had shipped twice.** It
+  catches that one bypass *shape*; it does not catch a handler that simply forgets to call
+  `IBranchAccessGuard`. That limitation is real and stated in "Known gaps".
+- **Dependabot** configured.
+
+## Deliberately deferred (and why)
+
+| Item | Why |
+|---|---|
+| **Global branch-isolation filter for every aggregate** | A `Member` global query filter already exists. Extending it to every branch-scoped aggregate caused a **second** branch-isolation regression across 17 handlers last time it was attempted. It is the right end state, but it needs its own focused piece of work with tests written first — not a cleanup-pass change |
+| **Redis** | Agreed for this product, but adding a cache is a behavioural change needing its own verification, not documentation tidying |
+| **Verifying Paymob/Fawry and Twilio against live accounts** | Needs real merchant and Twilio credentials. Implemented and self-tested; explicitly unverified |
+| **Load/performance testing** | None has been done. Recorded rather than guessed at |
 ## History (condensed)
 
 The codebase was built up over many incremental passes (documented in full in prior git history / commit

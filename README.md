@@ -213,6 +213,28 @@ Development. All endpoints are versioned (`/api/v1/...`) and require a bearer to
 `/auth/*` endpoints (`register`, `login`, `refresh`, `logout`, `password-reset/request`,
 `password-reset/confirm`).
 
+### How the two tokens are held
+
+The two tokens are stored differently on purpose:
+
+| Token | Where it lives | How it travels |
+|---|---|---|
+| **Access token** | **In memory only** — never `localStorage`, never `sessionStorage` | `Authorization: Bearer …` header |
+| **Refresh token** | **HttpOnly cookie** | Sent automatically by the browser (`credentials: 'include'`) |
+
+The split is the point. An access token is short-lived, so keeping it in a JavaScript variable that
+dies with the tab is an acceptable trade. A refresh token is a renewable session — if an injected
+script could read it, it could mint access tokens indefinitely — so it goes somewhere JavaScript
+cannot reach at all.
+
+Because the browser now attaches that cookie automatically, two things are load-bearing:
+
+- **CSRF protection** — double-submit; a readable `XSRF-TOKEN` cookie is echoed back in a header.
+- **`AllowCredentials()` in the CORS policy.** Without it the browser rejects every response
+  carrying a cookie *before the application sees it*, so login fails with no error from the server.
+  Server-side tests cannot catch this — the rule is enforced by the browser, so all 425 tests pass
+  while login is broken in a real browser. It has been missing once already.
+
 ## Known limitations
 
 See `PROJECT_STATUS.md` for the full, current list. In short: Paymob/Fawry and Twilio SMS are implemented
