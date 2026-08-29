@@ -61,7 +61,15 @@ builder.Services.AddCors(options =>
     options.AddPolicy("Frontend", policy => policy
         .WithOrigins(allowedOrigins)
         .AllowAnyHeader()
-        .AllowAnyMethod());
+        .AllowAnyMethod()
+        // Required for the HttpOnly refresh cookie to work at all. The frontend
+        // sends credentials: 'include', and without this header the browser
+        // rejects the whole response before the app sees it - the symptom is
+        // login simply failing, with no error from the server.
+        //
+        // Safe here because the origins are explicitly configured; credentials
+        // are forbidden with AllowAnyOrigin.
+        .AllowCredentials());
 });
 
 if (!builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Testing"))
