@@ -223,3 +223,30 @@ its deletion is removed.
 
 **Still needed from you:** point `ConnectionStrings:Redis` at a real server before running more than
 one instance. Until then the memory implementation is used and behaviour is unchanged.
+
+## Key Vault, App Insights and Sentry (2026-08-30)
+
+All three are wired and **inert until configured** — each registers only when its value is present,
+so nothing changes for a deployment that supplies none of them.
+
+| Feature | Enabled by |
+|---|---|
+| Azure Key Vault | `KeyVault__Uri` (registered above `SecretsValidator`, so vault values count as configured) |
+| Application Insights | `APPLICATIONINSIGHTS_CONNECTION_STRING` |
+| Sentry (frontend) | `window.__GYM_SENTRY_DSN__` |
+
+The frontend needed a different approach from the other products, and it is worth knowing why
+before changing it. It has no build step and no npm dependencies, so it currently loads **zero**
+third-party code. Vendoring Sentry's 148 kB bundle would put it outside any dependency management;
+loading it from a CDN unpinned would hand whoever controls that CDN script execution inside an
+authenticated admin session. It is therefore loaded from the official CDN at a **pinned version
+with Subresource Integrity** — verified in a real browser both ways: the correct hash loads, and a
+deliberately wrong hash is rejected.
+
+Changing the pinned Sentry version means recomputing the integrity hash. The command is in
+`frontend/js/errorReporting.js`, and a mismatch fails closed — Sentry does not load and the app
+carries on without it.
+
+**Still open:** the branch-isolation global filter for every aggregate, live-account verification
+for Paymob/Fawry and Twilio, and load testing. Branch protection is **not** available on this repo:
+it is private, and GitHub requires Pro for protection on private repositories.
