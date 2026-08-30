@@ -3,8 +3,14 @@ import { api, restoreSession } from './api/apiClient.js';
 import { CONFIG } from './config.js';
 import { registerRoute, setNotFoundHandler, startRouter, navigate, currentPath } from './router.js';
 import { t, initI18n, getLocale, toggleLocale } from './i18n/index.js';
+import { initErrorReporting } from './errorReporting.js';
 
 initI18n();
+
+// Not awaited: error reporting is diagnostics, and blocking the app's start on a third-party
+// script would trade a real user-visible delay for something only useful once a bug has already
+// happened. With no DSN configured this returns immediately without touching the network.
+void initErrorReporting();
 
 // The access token now lives in memory, so it is gone after every reload while the HttpOnly refresh
 // cookie survives. Without this, an ordinary F5 would bounce the user to the login page despite a
