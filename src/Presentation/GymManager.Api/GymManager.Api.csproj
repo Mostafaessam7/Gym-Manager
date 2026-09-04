@@ -20,7 +20,7 @@
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" Version="4.7.0" />
     <!-- Direct pin: forces the transitive OpenTelemetry.Api dependency (pulled in at 1.14.0 by the
          Instrumentation.* packages below) up to a version past GHSA-g94r-2vxg-569j (patched in 1.15.3). -->
-    <PackageReference Include="OpenTelemetry.Api" Version="1.16.0" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.18.0" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.13.1" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.13.1" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0" />
