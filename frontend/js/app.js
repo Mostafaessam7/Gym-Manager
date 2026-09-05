@@ -77,7 +77,7 @@ function initTheme() {
 
 function initLanguage() {
   const langToggle = document.getElementById('lang-toggle');
-  langToggle.textContent = getLocale() === 'ar' ? 'عربي' : 'EN';
+  langToggle.textContent = getLocale() === 'ar' ? 'ع' : 'EN';
   langToggle.title = t('topbar.toggleLanguage');
   langToggle.addEventListener('click', toggleLocale);
 }

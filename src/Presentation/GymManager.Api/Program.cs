@@ -134,7 +134,23 @@ else
 app.UseRequestLocalization();
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+// The frontend is hand-written ES modules with no build step, so filenames carry no content hash
+// (js/app.js is always js/app.js). Served with no Cache-Control, browsers apply their heuristic
+// freshness rules and hold on to those modules for a long time -- a deployed change then reaches
+// nobody, with no error and nothing in the logs to suggest why. Confirmed on 2026-09-05: the
+// server was returning updated JS while the browser kept executing the previous version.
+//
+// no-cache does not mean "do not cache". It means revalidate before reuse: the browser still
+// stores the file and still gets a 304 when nothing changed, so this costs a conditional request
+// per asset rather than a full download. That is the right trade for files that have no other
+// cache-busting mechanism. Add content hashes to the filenames and this can become immutable.
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = context =>
+    {
+        context.Context.Response.Headers.CacheControl = "no-cache";
+    },
+});
 app.UseCors("Frontend");
 app.UseRateLimiter();
 app.UseAuthentication();

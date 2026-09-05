@@ -13,7 +13,7 @@ document.title = `${t('login.signIn')} · Gym Manager`;
 document.getElementById('login-email-label').textContent = t('login.email');
 document.getElementById('login-password-label').textContent = t('login.password');
 document.getElementById('login-hint').textContent = t('login.defaultAccount');
-document.getElementById('lang-toggle').textContent = getLocale() === 'ar' ? 'عربي' : 'EN';
+document.getElementById('lang-toggle').textContent = getLocale() === 'ar' ? 'ع' : 'EN';
 document.getElementById('lang-toggle').title = t('topbar.toggleLanguage');
 document.getElementById('theme-toggle').title = t('topbar.toggleTheme');
 
