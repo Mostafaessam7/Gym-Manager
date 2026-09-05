@@ -104,7 +104,18 @@ public sealed class AuthController(IDispatcher dispatcher, IWebHostEnvironment e
 
     public sealed record LoginRequest(string Email, string Password);
 
-    public sealed record RefreshTokenRequest(string RefreshToken);
+    /// <summary>
+    /// <c>RefreshToken</c> is nullable because it is genuinely optional: a cookie-transport client
+    /// posts an empty body and the token is read from the <c>gym_rt</c> cookie instead, in
+    /// <see cref="ResolveRefreshToken"/>.
+    ///
+    /// It must stay nullable. With a non-nullable <c>string</c>, [ApiController]'s automatic model
+    /// validation treats the property as required and rejects <c>{}</c> with 400 "The RefreshToken
+    /// field is required" **before the action runs** — so the cookie branch below became
+    /// unreachable and every cookie-transport refresh failed, which is exactly what happened until
+    /// 2026-09-05.
+    /// </summary>
+    public sealed record RefreshTokenRequest(string? RefreshToken);
 
     public sealed record RequestPasswordResetRequest(string Email);
 

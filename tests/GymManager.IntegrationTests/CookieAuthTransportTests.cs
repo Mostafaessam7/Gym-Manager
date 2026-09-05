@@ -120,6 +120,82 @@ public sealed class CookieAuthTransportTests(CustomWebApplicationFactory factory
     }
 
     [Fact]
+    public async Task Refresh_succeeds_with_the_empty_body_the_browser_client_actually_sends()
+    {
+        // Every other test in this file posts `refreshToken = ""`. The real frontend posts `{}`
+        // with no such key -- and those are not the same request. An empty string satisfies
+        // [ApiController]'s implicit required check for a non-nullable string; an absent key does
+        // not, and used to fail with 400 "The RefreshToken field is required" before the action
+        // ever ran, making the cookie branch of ResolveRefreshToken unreachable.
+        //
+        // The effect was that login worked, the browser navigated to dashboard.html, the dashboard
+        // refreshed, got a 400, cleared the session and bounced straight back to the login page.
+        // The app could not be used at all, while this suite stayed green.
+        var client = factory.CreateClient();
+        var (registerResponse, email, password) = await RegisterAsync(client);
+        registerResponse.EnsureSuccessStatusCode();
+
+        var login = await LoginAsync(client, email, password, cookieTransport: true);
+        login.EnsureSuccessStatusCode();
+
+        var cookies = SetCookies(login)
+            .Select(c => c.Split(';')[0])
+            .ToList();
+        var csrf = cookies
+            .First(c => c.StartsWith("XSRF-TOKEN=", StringComparison.Ordinal))
+            .Split('=', 2)[1];
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/refresh")
+        {
+            // Exactly what js/api/apiClient.js sends: JSON.stringify({}).
+            Content = JsonContent.Create(new { }),
+        };
+        request.Headers.Add("Cookie", string.Join("; ", cookies));
+        request.Headers.Add("X-Auth-Transport", "cookie");
+        request.Headers.Add("X-XSRF-TOKEN", csrf);
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var refreshed = await response.Content.ReadFromJsonAsync<AuthResponse>();
+        Assert.NotNull(refreshed);
+        Assert.False(string.IsNullOrWhiteSpace(refreshed!.AccessToken));
+
+        // Cookie transport means the rotated refresh token goes back in the cookie, never the body.
+        Assert.True(string.IsNullOrEmpty(refreshed.RefreshToken));
+    }
+
+    [Fact]
+    public async Task Logout_accepts_the_empty_body_the_browser_client_actually_sends()
+    {
+        // Same shape, same trap: Logout binds the same request record.
+        var client = factory.CreateClient();
+        var (registerResponse, email, password) = await RegisterAsync(client);
+        registerResponse.EnsureSuccessStatusCode();
+
+        var login = await LoginAsync(client, email, password, cookieTransport: true);
+        login.EnsureSuccessStatusCode();
+
+        var cookies = SetCookies(login).Select(c => c.Split(';')[0]).ToList();
+        var csrf = cookies
+            .First(c => c.StartsWith("XSRF-TOKEN=", StringComparison.Ordinal))
+            .Split('=', 2)[1];
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/logout")
+        {
+            Content = JsonContent.Create(new { }),
+        };
+        request.Headers.Add("Cookie", string.Join("; ", cookies));
+        request.Headers.Add("X-Auth-Transport", "cookie");
+        request.Headers.Add("X-XSRF-TOKEN", csrf);
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Refresh_carrying_the_cookie_without_a_CSRF_header_is_rejected()
     {
         // Without this the change would trade XSS exposure for CSRF exposure: the browser attaches
